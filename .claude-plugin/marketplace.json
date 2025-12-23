@@ -1,11 +1,14 @@
 {
   "name": "invigo-marketplace",
-  "owner": "invigoworks",
+  "owner": {
+    "name": "invigoworks",
+    "url": "https://github.com/invigoworks"
+  },
   "description": "Invigo Marketplace",
   "plugins": [
     {
       "name": "example-plugin",
-      "source": "invigoworks/example-plugin"
+      "source": "./plugins/example-plugin"
     }
   ]
 }
