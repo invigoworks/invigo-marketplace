@@ -1,0 +1,11 @@
+{
+  "name": "Invigo Marketplace",
+  "description": "Your description",
+  "plugins": [
+    {
+      "id": "example-plugin",
+      "name": "Example",
+      "path": "./plugins/example"
+    }
+  ]
+}
