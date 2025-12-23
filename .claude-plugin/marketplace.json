@@ -1,11 +1,11 @@
 {
-  "name": "Invigo Marketplace",
-  "description": "Your description",
+  "name": "invigo-marketplace",
+  "owner": "invigoworks",
+  "description": "Invigo Marketplace",
   "plugins": [
     {
-      "id": "example-plugin",
-      "name": "Example",
-      "path": "./plugins/example"
+      "name": "example-plugin",
+      "source": "invigoworks/example-plugin"
     }
   ]
 }
