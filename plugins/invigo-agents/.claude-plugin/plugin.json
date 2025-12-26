@@ -6,5 +6,6 @@
     "name": "invigoworks",
     "url": "https://github.com/invigoworks"
   },
-  "license": "MIT"
+  "license": "MIT",
+  "skills": "./skills"
 }
