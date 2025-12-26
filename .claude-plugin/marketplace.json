@@ -11,14 +11,14 @@
   "plugins": [
     {
       "name": "invigo-agents",
-      "description": "A collection of 23 specialized AI agents for software development, including frontend, backend, database, DevOps, and more. Also includes the skill-creator skill.",
+      "description": "A collection of 23 specialized AI agents for software development, plus skills including skill-creator and feature-planner (TDD-based phase planning with quality gates).",
       "version": "1.0.0",
       "author": {
         "name": "invigoworks",
         "url": "https://github.com/invigoworks"
       },
       "homepage": "https://github.com/invigoworks/invigo-marketplace",
-      "tags": ["agents", "development", "ai", "productivity", "workflow"],
+      "tags": ["agents", "development", "ai", "productivity", "workflow", "planning", "tdd"],
       "source": "./plugins/invigo-agents"
     }
   ]

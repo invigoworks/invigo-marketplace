@@ -33,6 +33,7 @@ A collection of 23 specialized AI agents for Claude Code, designed to enhance yo
 ## Skills
 
 - `skill-creator` - Guide for creating effective skills
+- `feature-planner` - Creates phase-based feature plans with TDD integration and quality gates
 
 ## Installation
 
