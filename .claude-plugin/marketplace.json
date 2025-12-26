@@ -4,11 +4,22 @@
     "name": "invigoworks",
     "url": "https://github.com/invigoworks"
   },
-  "description": "Invigo Marketplace",
+  "metadata": {
+    "description": "Invigo Marketplace - A curated collection of Claude Code plugins for enhanced development workflows",
+    "version": "1.0.0"
+  },
   "plugins": [
     {
-      "name": "example-plugin",
-      "source": "./plugins/example-plugin"
+      "name": "invigo-agents",
+      "description": "A collection of 23 specialized AI agents for software development, including frontend, backend, database, DevOps, and more. Also includes the skill-creator skill.",
+      "version": "1.0.0",
+      "author": {
+        "name": "invigoworks",
+        "url": "https://github.com/invigoworks"
+      },
+      "homepage": "https://github.com/invigoworks/invigo-marketplace",
+      "tags": ["agents", "development", "ai", "productivity", "workflow"],
+      "source": "./plugins/invigo-agents"
     }
   ]
 }

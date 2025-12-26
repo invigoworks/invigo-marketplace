@@ -1,0 +1,10 @@
+{
+  "name": "invigo-agents",
+  "version": "1.0.0",
+  "description": "A collection of 23 specialized AI agents for software development, including frontend, backend, database, DevOps, and more.",
+  "author": {
+    "name": "invigoworks",
+    "url": "https://github.com/invigoworks"
+  },
+  "license": "MIT"
+}
