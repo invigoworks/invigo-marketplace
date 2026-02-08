@@ -20,6 +20,17 @@
       "homepage": "https://github.com/invigoworks/invigo-marketplace",
       "tags": ["agents", "development", "ai", "productivity", "workflow", "planning", "tdd"],
       "source": "./plugins/invigo-agents"
+    },
+    {
+      "name": "bitda-plan-master",
+      "description": "BITDA ERP development workflow: 9 skills (planning, UI design, review, deployment, Notion registration) + 4 agents (UI supervision, Playwright testing)",
+      "version": "1.0.0",
+      "author": {
+        "name": "gimjinhyeog"
+      },
+      "homepage": "https://github.com/invigoworks/invigo-marketplace",
+      "tags": ["erp", "planning", "ui", "review", "deployment", "notion", "playwright", "bitda"],
+      "source": "./plugins/bitda-plan-master"
     }
   ]
 }

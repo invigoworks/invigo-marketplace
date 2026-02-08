@@ -1,0 +1,10 @@
+{
+  "name": "bitda-plan-master",
+  "version": "1.0.0",
+  "description": "BITDA ERP development workflow: 9 skills (plan-developer, plan-reviewer, plan-review-team, ui-designer, ui-improver, github-deployer, notion-uploader, notion-validator, agent-browser) + 4 agents (ui-supervisor, playwright-test-planner, playwright-test-generator, playwright-test-healer)",
+  "author": {
+    "name": "gimjinhyeog"
+  },
+  "license": "MIT",
+  "skills": "./skills"
+}
