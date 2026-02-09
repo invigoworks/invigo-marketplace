@@ -250,17 +250,25 @@ import { Badge } from "@plan-master/web-platform/shadcn";
 </TableRow>
 ```
 
-### 8. 검색 Input 패턴
+### 8. 검색 Input 패턴 (CRITICAL)
 
+**반드시 `SearchInput` 컴포넌트를 사용:**
 ```tsx
+import { SearchInput } from "@plan-master/web-platform";
+
+<SearchInput
+  value={searchKeyword}
+  onChange={setSearchKeyword}
+  placeholder="검색어를 입력하세요"
+/>
+```
+
+**잘못된 패턴 (절대 금지):**
+```tsx
+// ❌ Search 아이콘 + Input 직접 조합
 <div className="relative">
   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-  <Input
-    placeholder="검색어를 입력하세요"
-    value={searchKeyword}
-    onChange={(e) => setSearchKeyword(e.target.value)}
-    className="pl-9 w-[250px]"
-  />
+  <Input placeholder="검색어를 입력하세요" className="pl-9 w-[250px]" />
 </div>
 ```
 
@@ -284,6 +292,43 @@ import { Badge } from "@plan-master/web-platform/shadcn";
   {/* ... */}
 </Button>
 ```
+
+### 10. React 코드 품질 규칙 (CRITICAL)
+
+**Fragment key**: `.map()` 내에서 다중 요소를 반환할 때 `Fragment`에 `key` 필수:
+```tsx
+// ✅ 올바른 패턴
+import { Fragment } from "react";
+
+{items.map((item) => (
+  <Fragment key={item.id}>
+    <TableRow>...</TableRow>
+    {expanded && <TableRow>...</TableRow>}
+  </Fragment>
+))}
+
+// ❌ 잘못된 패턴 - key 없는 Fragment
+{items.map((item) => (
+  <>
+    <TableRow>...</TableRow>
+    {expanded && <TableRow>...</TableRow>}
+  </>
+))}
+```
+
+**useMemo**: 필터링/정렬 등 파생 데이터는 반드시 `useMemo`로 감싸기:
+```tsx
+// ✅ 올바른 패턴
+const filteredItems = useMemo(
+  () => items.filter((item) => item.name.includes(search)),
+  [items, search]
+);
+
+// ❌ 잘못된 패턴 - 렌더링마다 재계산
+const filteredItems = items.filter((item) => item.name.includes(search));
+```
+
+**console.log 금지**: 디버깅용 `console.log`는 커밋 전 반드시 제거.
 
 ---
 
@@ -336,6 +381,10 @@ grep -r "overflow-x-auto" apps/*/src/**/*.tsx
 - [ ] 날짜 선택 시 `DateRangeFilter` 또는 `DateRangePicker` 사용
 - [ ] 테이블 래퍼에 `px-4 py-2` 패딩 적용
 - [ ] 액션 컬럼 `text-center` 정렬
+- [ ] 검색 입력은 `SearchInput` 컴포넌트 사용
+- [ ] `.map()` 내 다중 요소 반환 시 `Fragment key` 적용
+- [ ] 필터링/정렬 파생 데이터는 `useMemo` 사용
+- [ ] `console.log` 디버그 코드 미포함 확인
 
 ### 코드 검사 시 (ui-supervisor)
 
@@ -344,3 +393,7 @@ grep -r "overflow-x-auto" apps/*/src/**/*.tsx
 - [ ] `type="date"` 사용 여부 검사
 - [ ] 테이블 `overflow-x-auto` 래퍼의 `px-` 패딩 여부 검사
 - [ ] 기존 동일 도메인 페이지와 패턴 비교
+- [ ] `Search` 아이콘 + `Input` 직접 조합 대신 `SearchInput` 사용 여부
+- [ ] `.map()` 내 `<>` (short Fragment) 대신 `<Fragment key>` 사용 여부
+- [ ] 필터링/정렬 로직이 `useMemo`로 감싸져 있는지
+- [ ] `console.log` 잔류 여부

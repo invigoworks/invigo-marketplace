@@ -28,8 +28,10 @@
 | 시간 입력 | `TimeInput`, `TimePicker` | `web-platform/components` |
 | 날짜 선택 | `DateRangePicker`, `DateRangeFilter` | `web-platform/components` |
 | 검색 선택 | `SearchableSelect`, `ComboBox` | `web-platform/components` |
+| 검색 입력 | `SearchInput` | `web-platform/components` |
 | 상태 배지 | `StatusBadge`, `Badge` | `web-platform/shadcn` |
 | 확인 다이얼로그 | `ConfirmDialog`, `AlertDialog` | `web-platform/components` |
+| 다중 선택 다이얼로그 | `MultiItemSelectDialog` | `web-platform/components` |
 | 폼 시트 | `FormSheet`, `FormSheetFooter` | `web-platform/components` |
 | 데이터 테이블 | `DataTable`, `Table` | `web-platform/shadcn` |
 
@@ -157,3 +159,5 @@ const statusConfig = {
 | `Sheet` + 수동 패딩 | `FormSheet` | `@bitda/web-platform` |
 | 직접 구현 검색 선택 | `SearchableSelect` | `@bitda/web-platform` |
 | `<h1>` 페이지 타이틀 | `PageTitle` | `@bitda/web-platform` |
+| `Search` 아이콘 + `Input` 조합 | `SearchInput` | `@bitda/web-platform` |
+| 커스텀 다중선택 Popover | `MultiItemSelectDialog` | `@bitda/web-platform` |

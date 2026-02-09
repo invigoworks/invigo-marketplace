@@ -134,6 +134,15 @@ apps/preview/src/router.tsx  ← 모든 앱 라우트 통합
 | 날짜 선택 | `<DateRangeFilter>` 또는 `<DateRangePicker>` |
 | 테이블 패딩 | `overflow-x-auto px-4 py-2` 래퍼 |
 
+### React 코드 품질 체크리스트 (CRITICAL)
+
+| 항목 | 규칙 |
+|------|------|
+| 검색 입력 | `SearchInput` 컴포넌트 사용 (Search 아이콘+Input 직접 조합 금지) |
+| Fragment key | `.map()` 내 다중 요소 → `<Fragment key={id}>` 필수 (`<>` 금지) |
+| useMemo | 필터링/정렬 파생 데이터는 반드시 `useMemo` 사용 |
+| console.log | 디버그용 `console.log` 미포함 확인 |
+
 ### File Structure
 
 ```
