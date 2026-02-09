@@ -1,0 +1,14 @@
+#!/bin/bash
+# Pre-commit hook: staged .kt 파일이 있을 때만 빌드 검증
+
+KT_FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep '\.kt$' || true)
+
+if [[ -z "$KT_FILES" ]]; then
+  # .kt 변경 없음 → 빌드 스킵
+  exit 0
+fi
+
+echo "🔨 Kotlin 파일 변경 감지 — 빌드 검증 중..."
+./gradlew build 2>&1 | tail -20
+
+exit ${PIPESTATUS[0]}
