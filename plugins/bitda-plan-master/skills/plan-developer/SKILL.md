@@ -42,7 +42,8 @@ Transforms feature ideas into comprehensive planning documents. Supports **페�
 ## CRITICAL: Notion 접근 규칙
 
 - ❌ `WebFetch`, `Playwright` 절대 사용 금지
-- ✅ Notion MCP만 사용: `notion-search`, `notion-fetch`, `notion-update-page`
+- ✅ Notion MCP만 사용: `notion-search`, `notion-fetch`, `notion-update-page`, `notion-create-pages`, `notion-update-data-source`
+- ⚠️ 정확한 파라미터는 `references/notion-access-rules.md` 참조 (특히 `notion-fetch`는 `id` 파라미터만 존재)
 
 ---
 
@@ -440,6 +441,10 @@ Then: 등록 완료
 2. Notion MCP로 조회
 3. 수정 사항 분석 후 업데이트
 
+> **⚠️ 다수 페이지 업데이트 시**: 3건 이상 페이지를 수정해야 할 경우
+> 반드시 `references/notion-access-rules.md`의 "컨텍스트 관리" 섹션 참조.
+> 메인 컨텍스트에서 notion-fetch는 **최대 2건**, 나머지는 **subagent 위임** 필수.
+
 ### Mode 2: 재설계 개발 (Migration)
 
 1. `/migration_image/[feature]/` 이미지 분석
@@ -459,6 +464,10 @@ Then: 등록 완료
 2. 영향 범위 분석 (UI/API/데이터/로직)
 3. 변경 명세서 작성 - `references/change-spec-template.md`
 4. Notion 업데이트 (진행 단계: 기획 변경, 버전 +0.1)
+
+> **⚠️ 다수 페이지 변경 시**: 영향 범위가 3건 이상 페이지에 걸치면
+> `references/notion-access-rules.md`의 "컨텍스트 관리" 섹션 참조.
+> 변경사항을 scratchpad 파일에 정리 → subagent가 개별 페이지 업데이트.
 
 ---
 
@@ -543,9 +552,22 @@ Trigger: "디자인 단계로 넘어가줘", "코드 생성해줘"
 
 ## Notion Integration
 
-**기획문서 DB**: `collection://2df471f8-dcff-8083-8ce6-000b81ceb6f9`
+**기획문서 DB**: `references/planning-db-schema.md` 참조 (DB ID, Data Source URL 등 하드코딩 상수)
 
 > 별도 페이지 생성 안 함. DB 항목 content에 직접 작성.
+> **⚠️ Context Overflow 주의**: 기획문서 1건은 10k-20k 토큰.
+> 3건 이상 fetch 시 반드시 subagent 격리. 상세: `references/notion-access-rules.md`
+
+### 매니페스트 활용 (토큰 최적화)
+
+> DB 전체 조회 전에 `.claude/shared-references/notion-manifest.md`를 먼저 확인.
+> 상세: `references/notion-access-rules.md` → "매니페스트 우선 조회" 섹션
+
+| 작업 | 매니페스트 활용 |
+|------|---------------|
+| Mode 1/4 (업데이트/변경) | 매니페스트에서 Page ID 조회 → 해당 페이지만 fetch (subagent) → 수정 후 매니페스트 업데이트 |
+| Mode 3/5 (신규 생성) | notion-create-pages 완료 → 매니페스트에 "기획 초벌" 그룹에 새 행 추가 |
+| 상태 조회 ("부서 협의중 목록") | 매니페스트 읽기만으로 완료 (0 Notion 토큰) |
 
 ### 주요 DB 속성
 | 속성명 | 타입 | 용도 |

@@ -52,9 +52,9 @@ Glob: apps/manufacturing/src/components/**/*.tsx
 ### 3.3 도메인별 유사 컴포넌트
 기획서와 관련된 도메인 폴더에서 이미 구현된 컴포넌트 탐색
 
-4. **컴포넌트 재사용 가이드 참조**: `../../ui-designer/references/component-reuse.md` 파일을 읽고 교체 대상 목록을 확인합니다.
+4. **컴포넌트 재사용 가이드 참조**: `.claude/skills/ui-designer/references/component-reuse.md` 파일을 읽고 교체 대상 목록을 확인합니다.
 
-5. **UI 일관성 규칙 참조** (Shift Left): `../../ui-designer/references/consistency-rules.md` 파일을 읽고 4대 필수 규칙(PageTitle, FormSheet, DateRangeFilter, 테이블 패딩)을 기획서에서 준수하고 있는지 확인합니다.
+5. **UI 일관성 규칙 참조** (Shift Left): `.claude/skills/ui-designer/references/consistency-rules.md` 파일을 읽고 4대 필수 규칙(PageTitle, FormSheet, DateRangeFilter, 테이블 패딩)을 기획서에서 준수하고 있는지 확인합니다.
    - 기획서 컴포넌트 명세에 금지 패턴(`<h1>`, `<input type="date">`, Sheet+수동패딩)이 있으면 Critical로 보고
    - 기존 공유 컴포넌트(LiquorTypeBadge, EvidenceStatusBadge 등)가 아닌 일반 Badge 사용 시 Major로 보고
 

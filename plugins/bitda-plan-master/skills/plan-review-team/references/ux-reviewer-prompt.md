@@ -58,7 +58,7 @@ Notion 기획서: Page ID `{{PAGE_ID}}`
 4. **기존 패턴 비교**: 유사 기능의 기존 페이지에서 이미 잘 처리하고 있는 UX 패턴을 찾아 "이 패턴을 참고하세요"라고 제안
 
 5. **UI 일관성 4대 필수 규칙 검증** (Shift Left):
-   - `../../ui-designer/references/consistency-rules.md` 파일을 읽고 다음 항목을 기획서에서 확인:
+   - `.claude/skills/ui-designer/references/consistency-rules.md` 파일을 읽고 다음 항목을 기획서에서 확인:
 
    | 규칙 | 확인 사항 |
    |------|----------|

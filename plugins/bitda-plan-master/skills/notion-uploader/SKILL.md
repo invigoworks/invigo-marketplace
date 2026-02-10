@@ -204,8 +204,9 @@ const contextSave = Task({
 Before registration, **MUST** gather context from planning documents:
 
 1. **기획문서 확인**:
-   - Fetch the planning document from: https://www.notion.so/invigoworks/01-2df471f8dcff80c0893becf766c394b0
-   - Understand the original requirements, data models, and business rules
+   - **먼저** `.claude/shared-references/notion-manifest.md`에서 해당 기획문서의 Page ID와 메타데이터 확인 (0 토큰)
+   - 매니페스트에 있으면 해당 Page ID로 직접 `notion-fetch` (전체 DB 검색 불필요)
+   - 매니페스트에 없으면: https://www.notion.so/invigoworks/01-2df471f8dcff80c0893becf766c394b0 에서 검색
    - Note: 기획문서는 초안 상태이므로 퍼블리싱 코드에 반영된 피드백 사항들을 추가로 파악해야 함
 
 2. **퍼블리싱 코드 분석**:
@@ -291,7 +292,7 @@ Before registration, **MUST** gather context from planning documents:
 
 Search for existing codes in Notion:
 
-**화면유형 코드** (collection://2d3471f8-dcff-8051-ac76-000b25732bf2):
+**화면유형 코드** (DB ID: `2d3471f8-dcff-8051-ac76-000b25732bf2`):
 | 코드 | 원어 | 한글 |
 |------|------|------|
 | D | Dashboard | 대시보드 |
@@ -301,7 +302,7 @@ Search for existing codes in Notion:
 | R | Report | 리포트 |
 | M | Matrix | 매트릭스 |
 
-**마스터 기능코드** (collection://2d3471f8-dcff-803d-8b2c-000b5b9855af):
+**마스터 기능코드** (DB ID: `2d3471f8-dcff-803d-8b2c-000b5b9855af`):
 - Search for the feature code (e.g., "USR", "COM", "DASH")
 - Get the page URL for relation
 
@@ -425,7 +426,7 @@ Skill({
 - **Data Source ID**: `2d3471f8-dcff-8051-ac76-000b25732bf2`
 
 ### 기획문서 DB
-- **Data Source ID**: `2df471f8-dcff-8083-8ce6-000b81ceb6f9`
+- **DB ID**: `2df471f8-dcff-80b2-9a6d-f9972b15aa06`
 - **URL**: https://www.notion.so/invigoworks/01-2df471f8dcff80c0893becf766c394b0
 - **Purpose**: 기획 초안 확인 (피드백 전 버전)
 - **Relation**: 화면 DB의 "연관된 기획문서" 컬럼에서 연결됨 (화면 기획의 출처 추적용)

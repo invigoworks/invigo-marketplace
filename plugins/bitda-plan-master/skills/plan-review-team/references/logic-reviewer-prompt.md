@@ -16,7 +16,7 @@ Notion 기획서: Page ID `{{PAGE_ID}}`
    - 페이지 내용을 전부 읽어옵니다
    - 하위 페이지가 있으면 모두 조회합니다
 
-2. **체크리스트 참조**: `../../plan-reviewer/references/analysis-checklist.md` 파일을 읽고 해당 체크리스트를 기반으로 분석합니다.
+2. **체크리스트 참조**: `.claude/skills/plan-reviewer/references/analysis-checklist.md` 파일을 읽고 해당 체크리스트를 기반으로 분석합니다.
 
 3. **다차원 분석 수행**:
 
