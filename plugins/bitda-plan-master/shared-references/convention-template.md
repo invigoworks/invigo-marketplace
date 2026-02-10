@@ -52,6 +52,7 @@ BITDA-[도메인]-[모듈]-[기능]-[화면유형][순번]
 | CUS | Customer | 거래처 |
 | WHS | Warehouse | 창고 |
 | BOM | Bill Of Materials | 자재명세서 |
+| LOT | LOT | 로트 설정 |
 
 ### SYS (System / 시스템관리) - CM
 
@@ -62,8 +63,7 @@ BITDA-[도메인]-[모듈]-[기능]-[화면유형][순번]
 | USER | User | 사용자 관리 |
 | NTF | Notification | 알림 설정 |
 | THM | Theme | 테마 설정 |
-| LOT | Lot Rule | LOT 규칙 |
-| BILL | Billing | 요금제/결제 |
+| BILL | Billing | 요금제 |
 		
 
 ### CST (Cost / 원가관리) - CM
@@ -84,17 +84,22 @@ BITDA-[도메인]-[모듈]-[기능]-[화면유형][순번]
 | PRC | Process | 공정 |
 | WRK | Work | 작업 |
 | EQP | Equipment | 시설/설비 |
+| FAC | Factory | 공장/설비/통 |
+| SCH | Schedule | 생산지시현황표 |
 
 ### INV (Inventory / 재고관리) - CM
 
 | 코드 | 원어 | 한글 |
 |------|------|------|
 | STS | Status | 재고현황 |
-| IN | Incoming | 기타입고 |
-| OUT | Outgoing | 기타출고 |
+| IN | Inbound | 기타입고 |
+| OUT | Outbound | 기타출고 |
 | ADJ | Adjustment | 조정 |
 | MOV | Movement | 이동 |
 | HIS | History | 히스토리 |
+| SAL | Sales | 판매 |
+| PUR | Purchase | 구매 |
+| PR | Production receipt | 생산입고 |
 
 ### INV (Inventory / 재고관리) - CM
 
@@ -124,9 +129,9 @@ BITDA-[도메인]-[모듈]-[기능]-[화면유형][순번]
 |------|------|------|
 | BAS | Basic | 기초자료설정 |
 | PRD | Product | 주류제품설정 |
-| QTR | Quarter | 분기별 주세자료 |
-| MON | Monthly | 월별 주세자료 |
-| SLR | Sales Record | 거래처별 판매기록부 |
+| QTR | Quarterly | 분기별주세자료 |
+| MON | Monthly | 월별주세자료 |
+| SLR | Sales Record | 거래처별판매기록부 |
 | LED | Ledger | 주류수불상황표 |
 | REL | Release | 주류반출명세서 |
 | RDA | Return & Disposal Application | 환입/폐기신청서 |
@@ -162,7 +167,7 @@ BITDA-[도메인]-[모듈]-[기능]-[화면유형][순번]
 | CPA | Tax Accountant | 세무사관리 | 세무사 목록/등록/수정/삭제 |
 | CMAP | CPA Mapping | 클라이언트매핑 | 세무사-회사 매핑 |
 | SRV | Service | 서비스설정 | 서비스 환경설정 |
-| CPT | Company Type | 회사유형 | 회사 유형 관리 ||
+| CPT | Company Type | 회사유형 | 회사 유형 관리 |
 | TIER | Tier | 요금제 관리 | 요금제 별 사용량 및 상태, 통계 관리 |
 
 
@@ -172,8 +177,8 @@ BITDA-[도메인]-[모듈]-[기능]-[화면유형][순번]
 |------|------|------|------|
 | EVD | Evidence | 증빙자료 | 증빙자료 관리 |
 | HLC | Health Certificate | 보건증 | 보건증 관리 |
-| CLS | Classification | 원·부자재별 HACCP 검사 항목 |
-| LOG | Log | 원·부자재 검사 결과 기록 및 이력 관리 |
+| CLS | Classification | 원·부자재별 HACCP 검사 항목 |  |
+| LOG | Log | 원·부자재 검사 결과 기록 및 이력 관리 |  |
 
 ---
 
@@ -255,6 +260,8 @@ BITDA-CM-PRD-WH-S001     // 작업내역 목록
 BITDA-CM-PRD-PRC-S001    // 공정 관리
 BITDA-CM-PRD-EQP-S001    // 시설/설비 목록
 BITDA-CM-PRD-EQP-F001    // 시설/설비 등록/수정
+BITDA-CM-PRD-FAC-S001    // 공장/설비/통 설정
+BITDA-CM-PRD-SCH-S001    // 생산지시현황표
 ```
 
 ### 재고관리 (CM-INV)
@@ -350,10 +357,11 @@ BITDA-CM-ADM-SRV-S001    // 서비스 설정
 
 ## 최종 업데이트
 
-- 날짜: 2026-02-04
-- 버전: 4.2.0
+- 날짜: 2026-02-11
+- 버전: 4.3.2
 - 변경사항:
-  - 공유 참조 파일로 통합
-  - BR-OFC 모듈 기능코드 최신화 (DASH, CLI, SET, PMA, LED, REL, DCL, DMA)
-  - 미래 구현 예정 항목 제거 (현재 구현된 항목만 포함)
+  - PRD 모듈에 FAC(공장/설비/통), SCH(생산지시현황표) 기능코드 추가
+  - Notion 마스터 기능코드 DB와 동기화 완료
+- 이전 버전:
+  - 4.2.0 (2026-02-04): 공유 참조 파일로 통합, BR-OFC 최신화
 - Notion 원본: https://www.notion.so/invigoworks/00-BITDA-2ce471f8dcff804abd94d6a09fa4f16b

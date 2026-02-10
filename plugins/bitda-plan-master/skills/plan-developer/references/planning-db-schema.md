@@ -25,7 +25,15 @@
 - **Data Source URL**: `collection://2d3471f8-dcff-8076-a4a3-000b502a3811`
 
 ### 마스터 기능코드
+- **DB ID**: `2d3471f8-dcff-80cd-9de7-dac5de60856a`
 - **Data Source URL**: `collection://2d3471f8-dcff-803d-8b2c-000b5b9855af`
+- **스키마**: 기능 코드(Title), 원어(Text), 한글(Text), 도메인(Relation), 모듈 코드(Relation), 화면 DB(Relation)
+
+### 도메인 코드
+- **Data Source URL**: `collection://2d3471f8-dcff-8088-a81c-000b8b1e88b0`
+
+### 모듈 코드
+- **Data Source URL**: `collection://2d3471f8-dcff-80e9-b5b6-000be9b1876d`
 
 ### 화면유형 코드
 - **Data Source URL**: `collection://2d3471f8-dcff-8051-ac76-000b25732bf2`

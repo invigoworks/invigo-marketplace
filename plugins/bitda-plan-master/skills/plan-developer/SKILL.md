@@ -538,6 +538,27 @@ Then: 등록 완료
 1. 화면 코드 생성 (`references/convention-template.md`)
 2. shadcn 컴포넌트 명세
 3. Notion DB: `디자인 핸드오프: __YES__`
+4. **기능코드 자동 등록** (아래 절차 참조)
+
+### 기능코드 자동 등록 (CRITICAL)
+
+> 새 화면코드 생성 시 사용한 기능코드가 convention-template.md에 없으면 자동으로 등록해야 합니다.
+
+**자동 감지 절차:**
+
+1. PART 1.6에서 화면코드 생성 시 기능코드 추출
+   - 예: `BITDA-CM-PRD-FAC-S001` → 기능코드 `FAC`, 모듈 `PRD`
+2. `convention-template.md`에서 해당 모듈 섹션 검색
+3. 기능코드가 없으면:
+   - a. `convention-template.md`의 해당 모듈 테이블에 행 추가 (`| 코드 | 원어 | 한글 |`)
+   - b. 버전 번호 패치 증가 (예: 4.3.0 → 4.3.1)
+   - c. `.claude/shared-references/sync-feature-codes.sh --register` 실행하여 Notion 마스터 기능코드 DB에 등록
+   - d. 변경 이력 업데이트
+
+**관련 DB 상수:** `references/planning-db-schema.md` 참조
+- 마스터 기능코드 DB: `collection://2d3471f8-dcff-803d-8b2c-000b5b9855af`
+- 도메인 코드 DB: `collection://2d3471f8-dcff-8088-a81c-000b8b1e88b0`
+- 모듈 코드 DB: `collection://2d3471f8-dcff-80e9-b5b6-000be9b1876d`
 
 ---
 
