@@ -4,6 +4,43 @@
 
 ---
 
+## CRITICAL: Notion 테이블 작성 규칙
+
+이 템플릿의 테이블은 가독성을 위해 표준 Markdown(`| col | col |`)으로 표기되어 있지만,
+**Notion에 업로드할 때는 반드시 `<table>` HTML 형식으로 변환해야 합니다.**
+
+### 올바른 Notion 테이블 형식
+
+```html
+<table header-row="true">
+<tr>
+<td>유형</td>
+<td>설명</td>
+<td>화면코드</td>
+</tr>
+<tr>
+<td>PAGE</td>
+<td>메인 페이지</td>
+<td>BITDA-CM-INV-STS-S001</td>
+</tr>
+<tr>
+<td>OVERLAY</td>
+<td>상세 Sheet</td>
+<td>BITDA-CM-INV-STS-F001</td>
+</tr>
+</table>
+```
+
+### 금지 패턴
+
+1. **행 합침**: 하나의 `<tr>`에 여러 행 데이터를 넣지 말 것
+2. **태그 이스케이프**: `\<table\>`, `\<tr\>` 등 백슬래시 사용 금지
+3. **컬럼 수 불일치**: 모든 `<tr>`의 `<td>` 수는 헤더와 동일해야 함
+
+> **검수**: 콘텐츠 작성 후 `/validate-plan-content` 스킬이 자동 실행되어 테이블 구조를 검증합니다.
+
+---
+
 # [화면코드]-[화면유형]-(화면명) 기획서
 
 > **화면 코드 형식**: `BITDA-[앱]-[모듈]-[기능]-[유형][번호]`

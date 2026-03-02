@@ -191,6 +191,7 @@ await Task({
 | Sheet 패딩 | `FormSheet` 또는 내부 패딩 |
 | 날짜 컴포넌트 | `DateRangeFilter/DateRangePicker` |
 | 테이블 패딩 | `overflow-x-auto px-4 py-2` 래퍼 |
+| 상세 기본정보 | 컴팩트 그리드 (`lg:grid-cols-6`, 세로 라벨-값, `px-4 py-3`) |
 
 ### 결과 처리
 

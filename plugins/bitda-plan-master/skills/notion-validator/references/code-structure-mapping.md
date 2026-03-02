@@ -111,12 +111,14 @@ BITDA-[도메인]-[모듈]-[기능]-[화면유형][순번]
 
 ### 3.0b DOC (문서관리) 기능
 
-| 폴더명 | 기능 코드 | 기능명 | 설명 |
-|--------|----------|-------|------|
-| `health-cert` | HCR | 건강진단서 | 건강진단서 관리 |
-| `inspection-item` | INI | 검사항목 | 검사항목 관리 |
-| `inspection-report` | INR | 검사성적서 | 검사 성적서 |
-| `evidence` | EVD | 증빙 | 증빙 자료 관리 |
+> `document/` 폴더 내에서도 DOC 모듈과 HAC 모듈로 나뉨
+
+| 폴더명 | 기능 코드 | 기능명 | 도메인-모듈 | 설명 |
+|--------|----------|-------|-----------|------|
+| `health-cert` | HLC | 보건증 | BR-DOC | 보건증 관리 |
+| `evidence` | EVD | 증빙 | BR-DOC | 증빙 자료 관리 |
+| `inspection-item` | CLS | 검사품목 | CM-HAC | 원부자재 검사 품목 (HACCP) |
+| `inspection-report` | LOG | 검사일지 | CM-HAC | 원부자재 검사일지 (HACCP) |
 
 ### 3.1 MST (기준정보) 기능
 

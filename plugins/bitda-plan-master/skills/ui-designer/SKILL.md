@@ -134,6 +134,80 @@ apps/preview/src/router.tsx  ← 모든 앱 라우트 통합
 | 날짜 선택 | `<DateRangeFilter>` 또는 `<DateRangePicker>` |
 | 테이블 패딩 | `overflow-x-auto px-4 py-2` 래퍼 |
 
+### 뱃지 및 상태 표시 규칙 (CRITICAL)
+
+| 항목 | 규칙 |
+|------|------|
+| 상태 뱃지 | 모든 상태/유형 표시에 플랫폼 `StatusBadge` 사용. raw `<span>` 또는 `<Badge>`로 상태 색상 분기 금지 |
+| 뱃지 색상 타입 | `Record<DomainType, BadgeColor>` 사용. `Record<string, string>` 사용 금지 |
+| labels 위치 | `types.ts`에 정의 (도메인 타입과 함께) |
+| colors 위치 | `constants.ts`에 정의 (`BadgeColor` import 필요) |
+| 인라인 중복 금지 | 2회 이상 사용되는 labels/colors는 반드시 공유 상수로 추출 |
+
+**예시:**
+```typescript
+// types.ts — 도메인 타입 + labels
+export type MyStatus = 'PENDING' | 'ACTIVE' | 'CLOSED';
+export const MY_STATUS_LABELS: Record<MyStatus, string> = {
+  PENDING: '대기', ACTIVE: '진행중', CLOSED: '종료',
+};
+
+// constants.ts — 뱃지 색상
+import type { BadgeColor } from '@plan-master/web-platform';
+import type { MyStatus } from './types';
+export const MY_STATUS_COLORS: Record<MyStatus, BadgeColor> = {
+  PENDING: 'yellow', ACTIVE: 'blue', CLOSED: 'gray',
+};
+
+// 컴포넌트에서 사용
+<StatusBadge status={item.status} labels={MY_STATUS_LABELS} colors={MY_STATUS_COLORS} />
+```
+
+### 숫자 컬럼 정렬 규칙 (CRITICAL)
+
+| 항목 | 규칙 |
+|------|------|
+| 숫자 헤더 | `<TableHead className="text-right">` 또는 SortableHeader를 `<div className="flex justify-end">` 래핑 |
+| 숫자 셀 | `<TableCell className="text-sm text-right tabular-nums">` |
+| 대상 컬럼 | 수량, 금액, 세액, 단가, 비율 등 모든 숫자 데이터 |
+
+### Dialog/Sheet UX 규칙 (CRITICAL)
+
+| 항목 | 규칙 |
+|------|------|
+| State 초기화 | Dialog/Sheet `onOpenChange` 핸들러에서 닫힘 시 내부 useState 값 리셋 필수 |
+| DialogDescription | 모든 Dialog/AlertDialog에 `DialogDescription` 필수 (접근성 + 맥락 설명) |
+| Destructive variant | 삭제/폐기/제거 버튼은 반드시 `variant="destructive"` 적용 |
+| Back 버튼 위치 | `CRUDPageLayout`의 `headerActions`에 배치 (본문 인라인 배치 금지) |
+
+**State 초기화 예시:**
+```tsx
+const handleOpenChange = (open: boolean) => {
+  if (!open) {
+    setSelectedFiles([]);
+    setSearchTerm('');
+    form.reset();
+  }
+  onOpenChange(open);
+};
+```
+
+**DialogDescription 예시:**
+```tsx
+<DialogHeader>
+  <DialogTitle>일괄 등록</DialogTitle>
+  <DialogDescription>CSV 파일을 업로드하여 데이터를 일괄 등록합니다.</DialogDescription>
+</DialogHeader>
+```
+
+**headerActions 예시:**
+```tsx
+<CRUDPageLayout
+  title="등록"
+  headerActions={<Button variant="ghost" onClick={() => navigate(-1)}>← 목록으로</Button>}
+>
+```
+
 ### React 코드 품질 체크리스트 (CRITICAL)
 
 | 항목 | 규칙 |

@@ -141,8 +141,14 @@ notion-update-page({
 })
 ```
 
-### Command 4: 콘텐츠 삽입
+### Command 4: 콘텐츠 삽입 (⚠️ 사용 주의)
+
+> **WARNING**: `insert_content_after`는 선택 영역이 속한 블록(table, code block 등) **내부에** 콘텐츠를 삽입합니다.
+> 테이블 내부의 텍스트를 selection으로 지정하면, 새 콘텐츠가 테이블의 추가 행으로 병합됩니다.
+> **plan-developer에서는 이 명령 사용을 금지합니다.** 대신 `replace_content_range`로 인접 섹션과 함께 교체하세요.
+
 ```typescript
+// ⚠️ 테이블 관련 콘텐츠에서 사용 금지
 notion-update-page({
   data: {
     page_id: "xxx",
@@ -297,7 +303,7 @@ notion-get-self()  // ERROR: 이 도구는 없음
 │ 역할: 전체 동기화 강제 (수동 수정 금지)                         │
 ├─────────────────────────────────────────────────────────────┤
 │ [동기화 스크립트] .claude/shared-references/notion-sync.sh     │
-│ 동작: Notion REST API로 4개 상태 그룹 쿼리 → 매니페스트 재생성  │
+│ 동작: Notion REST API로 5개 상태 그룹 쿼리 → 매니페스트 재생성  │
 │ 비용: ~5k 토큰 (MCP 대비 99% 절감), 100% 정확도               │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -306,7 +312,7 @@ notion-get-self()  // ERROR: 이 도구는 없음
 
 | 파일 | 용도 |
 |------|------|
-| `.claude/shared-references/notion-manifest.md` | 기획문서 캐시 (ID, 제목, 진행 단계, 버전, 검토 상태) |
+| `.claude/shared-references/notion-manifest.md` | 기획문서 캐시 (ID, 제목, 진행 단계, 버전, 검토 상태). "로그 저장용" 문서 포함 (읽기 전용) |
 | `.claude/shared-references/notion-sync.sh` | REST API 동기화 스크립트 |
 | `.claude/hooks/notion-manifest-check.sh` | PreToolUse Hook (신선도 체크) |
 | `.claude/hookify.notion-manifest-sync.local.md` | Hookify Rule (불일치 감지) |

@@ -22,67 +22,9 @@ This skill handles the Notion registration phase for BITDA ERP UI:
 
 ---
 
-## STEP 0: Notion MCP 연결 확인 (필수 선행 단계)
+## STEP 0: Notion MCP 연결 확인
 
-> **CRITICAL**: 이 스킬의 모든 작업을 시작하기 전에 반드시 Notion MCP 연결 상태를 확인해야 합니다.
-
-### 연결 확인 절차
-
-1. **연결 테스트 실행**:
-   ```
-   notion-get-self 도구를 호출하여 현재 연결 상태 확인
-   ```
-
-2. **성공 시**: 스킬 워크플로우 진행
-   - Bot user 정보가 반환되면 연결 정상
-   - Phase 1부터 정상 진행
-
-3. **실패 시**: 재연결 안내
-   ```markdown
-   ⚠️ Notion MCP 연결 실패
-
-   Notion MCP가 연결되지 않았습니다. 다음 단계를 수행해주세요:
-
-   1. Claude Code 설정에서 Notion MCP 연결 상태 확인
-   2. Notion 인증 토큰이 유효한지 확인
-   3. MCP 서버 재시작 필요 시:
-      - Claude Code 재시작
-      - 또는 MCP 서버 수동 재연결
-
-   연결 완료 후 다시 시도해주세요.
-   ```
-
-### 연결 확인 코드
-
-```typescript
-// 스킬 시작 시 자동 실행
-const checkNotionConnection = async () => {
-  try {
-    const result = await mcp__plugin_Notion_notion__notion_get_self();
-    if (result) {
-      console.log('✅ Notion MCP 연결 확인됨:', result.name);
-      return true;
-    }
-  } catch (error) {
-    console.error('❌ Notion MCP 연결 실패');
-    return false;
-  }
-  return false;
-};
-
-// 연결 실패 시 스킬 진행 중단
-if (!await checkNotionConnection()) {
-  throw new Error('Notion MCP 연결이 필요합니다. 연결 후 다시 시도해주세요.');
-}
-```
-
-### 연결 상태별 동작
-
-| 상태 | 동작 |
-|------|------|
-| ✅ 연결됨 | Phase 1부터 정상 진행 |
-| ❌ 연결 안됨 | 에러 메시지 표시 + 재연결 안내 |
-| ⚠️ 토큰 만료 | 재인증 안내 |
+`notion-get-self` 도구를 호출하여 연결 상태 확인. 실패 시 사용자에게 MCP 재연결 안내 후 중단.
 
 ---
 
@@ -90,110 +32,7 @@ if (!await checkNotionConnection()) {
 
 - `../../shared-references/convention-template.md`: BITDA ERP screen code conventions (shared)
 - `references/notion-db-config.md`: Notion database IDs and schemas
-
-> **Note**: convention-template.md is a shared reference file. All skills use the same file to maintain consistency.
-
----
-
-## Specialized Agent Integration
-
-This skill leverages invigo-agents for documentation quality and context management:
-
-### Recommended Agents by Task
-
-| Task | Agent | Purpose |
-|------|-------|---------|
-| API Documentation | `invigo-agents:api-documenter` | OpenAPI specs, endpoint documentation, SDK generation |
-| Context Management | `invigo-agents:context-manager` | Multi-agent workflows, session coordination |
-| Backend Architecture | `invigo-agents:backend-architect` | API design review, business logic validation |
-| Code Explorer | `feature-dev:code-explorer` | Analyze codebase features, trace execution paths |
-
-### Agent Invocation Strategy
-
-**During Context Gathering (Phase 1):**
-
-1. **Code Analysis** - Deep codebase analysis:
-   ```
-   Task(subagent_type="feature-dev:code-explorer")
-   Prompt: "Analyze the deployed code at [GitHub URL].
-   Extract component structure, data models, and business logic."
-   ```
-
-2. **Context Coordination** - For complex multi-source documentation:
-   ```
-   Task(subagent_type="invigo-agents:context-manager")
-   Prompt: "Coordinate context from planning document and published code.
-   Identify discrepancies and consolidate final specifications."
-   ```
-
-**During Business Logic Documentation (Phase 3):**
-
-3. **API Documentation** - Generate backend specs:
-   ```
-   Task(subagent_type="invigo-agents:api-documenter")
-   Prompt: "Generate OpenAPI specification for [기능명] based on UI components.
-   Include request/response schemas, validation rules, and error codes."
-   ```
-
-4. **Architecture Validation** - Verify business logic completeness:
-   ```
-   Task(subagent_type="invigo-agents:backend-architect")
-   Prompt: "Review business logic documentation for [기능명].
-   Verify completeness for backend API development."
-   ```
-
-### Parallel Documentation Generation
-
-For multi-component features, document in parallel:
-
-```typescript
-// Parallel business logic documentation
-const parallelDocs = [
-  Task({
-    subagent_type: "invigo-agents:api-documenter",
-    prompt: "Document CRUD endpoints for UserTable component"
-  }),
-  Task({
-    subagent_type: "invigo-agents:api-documenter",
-    prompt: "Document form validation API for UserSheet component"
-  }),
-  Task({
-    subagent_type: "invigo-agents:api-documenter",
-    prompt: "Document delete operation API for DeleteDialog component"
-  })
-];
-```
-
-### Documentation Quality Gate
-
-Before Notion registration, validate with agents:
-
-```typescript
-// Sequential quality check
-const docReview = Task({
-  subagent_type: "invigo-agents:backend-architect",
-  prompt: `Verify business logic documentation is complete for backend development:
-  - All CRUD operations documented
-  - Validation rules specified
-  - Error handling defined
-  - API endpoints proposed`
-});
-```
-
-### Context Preservation
-
-For long-running documentation sessions:
-
-```typescript
-// Context management for multi-session work
-const contextSave = Task({
-  subagent_type: "invigo-agents:context-manager",
-  prompt: `Preserve documentation context for [기능명]:
-  - Current progress state
-  - Pending documentation items
-  - Cross-references to related features`
-});
-```
+- `references/agent-integration-guide.md`: Specialized agent usage for documentation quality
 
 ---
 
@@ -201,11 +40,9 @@ const contextSave = Task({
 
 ### Phase 1: Gather Context from Planning Documents
 
-Before registration, **MUST** gather context from planning documents:
-
 1. **기획문서 확인**:
-   - **먼저** `.claude/shared-references/notion-manifest.md`에서 해당 기획문서의 Page ID와 메타데이터 확인 (0 토큰)
-   - 매니페스트에 있으면 해당 Page ID로 직접 `notion-fetch` (전체 DB 검색 불필요)
+   - **먼저** `.claude/shared-references/notion-manifest.md`에서 해당 기획문서의 Page ID 확인 (0 토큰)
+   - 매니페스트에 있으면 해당 Page ID로 직접 `notion-fetch`
    - 매니페스트에 없으면: https://www.notion.so/invigoworks/01-2df471f8dcff80c0893becf766c394b0 에서 검색
    - Note: 기획문서는 초안 상태이므로 퍼블리싱 코드에 반영된 피드백 사항들을 추가로 파악해야 함
 
@@ -217,80 +54,193 @@ Before registration, **MUST** gather context from planning documents:
 
 ### Phase 2: Gather Registration Data
 
-1. **Screen Information**:
-   - 화면코드 (e.g., BITDA-CM-ADM-USR-S001)
-   - 화면명 (e.g., 사용자 목록)
-   - 화면유형 (S/F/P/R/D/M)
-   - 기능코드 (e.g., ADM-USR)
-   - GitHub source 링크
-   - 연관된 기획문서 (출처가 된 기획문서 URL)
+1. **Screen Information**: 화면코드, 화면명, 화면유형 (S/F/P/R/D/M), 기능코드, GitHub source 링크, 연관된 기획문서
+2. **Component Information**: 요소명, 비즈니스 로직 (Phase 3 참조), 연결할 화면
 
-2. **Component Information**:
-   - 요소명 (e.g., UserTable, UserSheet)
-   - 비즈니스 로직 (상세 작성 - Phase 3 참조)
-   - 연결할 화면
+### Phase 2.5: 컴포넌트 등록 단위 판단 (CRITICAL)
+
+> 테이블 API와 결합된 요소를 별도 등록하면 백엔드가 파편화된 문서를 참조하게 됨.
+
+#### 판단 기준: "이 요소가 독립적인 API를 필요로 하는가?"
+
+| 질문 | Yes → 분리 등록 | No → 병합 |
+|------|----------------|----------|
+| 자체 CRUD 엔드포인트가 필요한가? | Sheet, Dialog | FilterBar, Toolbar |
+| 독립적으로 데이터를 조회/저장하는가? | 별도 API 호출 위젯 | 테이블 쿼리 파라미터 변경 UI |
+| 다른 화면에서도 동일 API로 재사용되는가? | 공통 모달 | 특정 테이블 전용 필터 |
+
+#### 병합 대상 (별도 등록 금지)
+
+| 유형 | 예시 | 병합 위치 |
+|------|------|----------|
+| 필터바/검색바 | `*FilterBar`, `*SearchBar` | 부모 Table → 필터 파라미터 |
+| 정렬/페이지네이션 | `SortableHeader`, `*Pagination` | 부모 Table → 정렬/페이징 |
+| 테이블 툴바 | `TableToolbar`, `BulkInputToolbar` | 부모 Table → 대량 작업 |
+| 인라인 액션 | 행 내 버튼, 토글 | 부모 Table → 행 액션 |
+
+#### 분리 등록 대상
+
+| 유형 | 예시 | 이유 |
+|------|------|------|
+| Sheet (생성/수정 폼) | `UserSheet`, `OrderSheet` | 독립적인 Create/Update API |
+| Dialog (확인/삭제) | `DeleteDialog`, `ConfirmDialog` | 독립적인 Delete/Action API |
+| 독립 모달 폼 | `ImportExcelDialog` | 독립적인 업로드 API |
+
+**BAD** (파편화):
+```
+1. InventoryTable        → 목록 조회 로직
+2. InventoryFilterBar    → 필터 로직     ← ❌ 별도 등록
+3. InventoryPagination   → 페이지네이션  ← ❌ 별도 등록
+```
+
+**GOOD** (병합):
+```
+1. InventoryTable → 목록 조회 + 필터 + 정렬 + 페이지네이션 통합
+2. InventorySheet → CRUD 로직
+```
+
+#### Route Page 컴포넌트 등록 규칙 (CRITICAL)
+
+> **배경**: form-page.tsx, detail-page.tsx 등 route page가 화면 DB에 등록되었으나
+> 대응하는 컴포넌트가 생성되지 않는 누락 사고가 발생함. 원인: `components/` 디렉토리에
+> Sheet 파일이 없는 자기완결형 route page를 에이전트가 컴포넌트로 인식하지 못함.
+
+**필수 검증**: 화면 DB에 등록한 **모든** route page에 대해 컴포넌트 1:1 매칭 확인.
+
+| route 파일 패턴 | 화면유형 | 컴포넌트 매핑 방법 |
+|----------------|---------|-------------------|
+| `page.tsx` | S (Screen) | `components/*Table.tsx` → 컴포넌트 등록 |
+| `form-page.tsx` 또는 `form/page.tsx` | F (Form) | 아래 판단 로직 적용 |
+| `detail-page.tsx` 또는 `detail/page.tsx` | F (Form) | 아래 판단 로직 적용 |
+
+**Form/Detail 컴포넌트 매핑 판단:**
+
+```
+form-page.tsx 또는 form/page.tsx 발견
+    │
+    ├─ components/ 에 *Sheet.tsx 존재?
+    │   ├─ YES → 해당 Sheet를 컴포넌트로 등록 (기존 패턴)
+    │   │        예: SalesOrderSheet.tsx → form-page.tsx 화면에 연결
+    │   │
+    │   └─ NO → route page 자체를 컴포넌트로 등록 ⚠️
+    │            명명: [Module]FormPage (예: MiscIncomingFormPage)
+    │            비즈니스 로직: route 파일 내부 코드에서 추출
+    │
+detail-page.tsx 또는 detail/page.tsx 발견
+    │
+    ├─ components/ 에 *DetailSheet.tsx 존재?
+    │   ├─ YES → 해당 DetailSheet를 컴포넌트로 등록
+    │   │
+    │   └─ NO → route page 자체를 컴포넌트로 등록 ⚠️
+    │            명명: [Module]DetailPage (예: MiscIncomingDetailPage)
+```
+
+**최종 검증 (Phase 5 완료 직전)**:
+
+```
+모든 화면에 최소 1개 이상의 컴포넌트가 연결되어 있는가?
+```
+
+컴포넌트가 0개인 화면이 있으면 누락된 것이므로 추가 생성한 후 Phase 6으로 진행.
 
 ### Phase 3: 비즈니스 로직 작성 가이드
 
-**중요**: 비즈니스 로직은 백엔드 개발자가 API를 개발할 때 기획문서 없이도 작업할 수 있을 정도로 상세해야 함.
+> **목적**: 백엔드 개발자가 기획문서 없이 API를 개발할 수 있는 수준의 상세 명세
 
-#### 비즈니스 로직 필수 포함 사항:
+#### 🚫 절대 금지: 데이터 필드에 FE 변수명 사용
 
-1. **데이터 필드 정의**:
-   - 필드명, 타입, 필수 여부
-   - 유효성 검사 규칙 (최소/최대 길이, 형식 등)
-   - 기본값, 선택 옵션 목록
+> **ENFORCEMENT**: 데이터 필드 테이블의 "항목" 컬럼에는 **반드시 한글 서술명**만 사용.
+> 변수명은 백엔드가 자체 정의하므로 FE 변수명을 기재하면 혼란만 초래함.
 
-2. **CRUD 동작**:
-   - 생성(Create): 필수 필드, 자동 생성 필드
-   - 조회(Read): 목록 필터, 정렬, 페이지네이션
-   - 수정(Update): 수정 가능 필드, 수정 불가 필드
-   - 삭제(Delete): 삭제 조건, 연관 데이터 처리
+**BAD** - FE 변수명 사용:
+```
+| 항목 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| orderNumber | string | Y | 주문번호 |
+| supplierId | string(UUID) | Y | 입고처 ID |
+| totalAmount | number | Y | 합계 금액 |
+| status | enum | Y | 진행상태 |
+```
 
-3. **비즈니스 규칙**:
-   - 상태 변경 로직 (예: 상태가 '완료'면 수정 불가)
-   - 권한 체크 (예: 본인 데이터만 수정 가능)
-   - 연관 관계 (예: 회사 삭제 시 소속 사용자 처리)
+**GOOD** - 한글 서술명 사용:
+```
+| 항목 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| 발주번호 | string | Y | 자동 채번 (PO-yyyyMMdd-NNN) |
+| 입고처 | string(UUID) | Y | 거래처 FK |
+| 합계 금액 | number | Y | 품목별 금액 합산, 자동 계산 |
+| 진행상태 | enum | Y | 작성중/발주완료/입고완료/취소 |
+```
 
-4. **API 엔드포인트 제안**:
-   - HTTP Method + Path
-   - Request/Response 예시
+> 이 규칙은 필터 파라미터, 정렬 필드, 페이지네이션 파라미터에도 동일하게 적용됨.
 
-#### 비즈니스 로직 작성 예시:
+**BAD** - 필터에 변수명:
+```
+| 파라미터 | 타입 | 설명 |
+|---------|------|------|
+| warehouseId | string[] | 창고 필터 |
+| keyword | string | 검색어 |
+```
+
+**GOOD** - 필터에 한글명:
+```
+| 필터 항목 | 타입 | 설명 |
+|----------|------|------|
+| 창고 | string[] | 다중 선택 |
+| 검색어 | string | 품목명/품목코드 부분 일치 |
+```
+
+#### 비즈니스 로직 필수 포함 사항
+
+1. **데이터 필드 정의**: 항목(한글), 타입, 필수 여부, 유효성 규칙, 기본값/옵션
+2. **CRUD 동작**: 생성(필수/자동 필드), 조회(필터/정렬/페이징), 수정(가능/불가 필드), 삭제(조건/연관 처리)
+3. **비즈니스 규칙**: 상태 변경 로직, 권한 체크, 연관 관계
+4. **API 엔드포인트 제안**: HTTP Method + Path
+
+#### 작성 예시
 
 ```
-## UserTable (사용자 목록)
+## InventoryTable (재고 목록)
 
 ### 데이터 필드
-| 필드명 | 타입 | 필수 | 설명 |
-|--------|------|------|------|
-| id | string(UUID) | Y | 사용자 고유 ID (자동생성) |
-| email | string | Y | 이메일 (중복 불가, 형식 검증) |
-| name | string | Y | 이름 (2-50자) |
-| role | enum | Y | 권한 (admin/manager/user) |
-| companyId | string | Y | 소속 회사 ID (FK) |
-| status | enum | Y | 상태 (active/inactive/pending) |
-| createdAt | datetime | Y | 생성일시 (자동) |
-| updatedAt | datetime | Y | 수정일시 (자동) |
+| 항목 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| 품목 ID | string(UUID) | Y | 자동생성 |
+| 품목명 | string | Y | 제품/원재료명 |
+| 창고 | string | Y | 창고 FK |
+| 현재고 | number | Y | 실시간 수량 |
+| 단위 | string | Y | kg, L, EA 등 |
+| 최종입고일 | datetime | N | 마지막 입고 일시 |
 
 ### 목록 조회
-- GET /api/v1/users
-- 필터: companyId, role, status, keyword(이름/이메일 검색)
-- 정렬: createdAt desc (기본), name asc
-- 페이지네이션: page, limit (기본 20)
-- 권한: admin은 전체, manager는 본인 회사만
+- GET /api/v1/inventory
+
+#### 필터
+| 필터 항목 | 타입 | 설명 |
+|----------|------|------|
+| 창고 | string[] | 다중 선택 |
+| 품목 분류 | string | 분류 코드 |
+| 검색어 | string | 품목명/품목코드 부분 일치 |
+| 재고 상태 | enum | 전체/재고있음/재고없음 |
+
+#### 정렬
+| 정렬 기준 | 기본값 | 설명 |
+|----------|--------|------|
+| 최종입고일 | desc | 기본 정렬 |
+| 품목명 | - | 가나다순 |
+
+#### 페이지네이션
+- 기본 20건, 최대 100건
+- 응답에 전체 건수, 전체 페이지 수 포함
 
 ### 비즈니스 규칙
-- 이메일 중복 체크 필수
-- 상태 변경 시 이력 기록
-- 삭제 시 soft delete (status = 'deleted')
+- 재고 0 이하: 빨간색 강조
+- 권한: 전체 사용자 조회 가능
 ```
 
 ### Phase 4: 화면 DB 등록
 
 #### 4.1 Find Related Codes
-
-Search for existing codes in Notion:
 
 **화면유형 코드** (DB ID: `2d3471f8-dcff-8051-ac76-000b25732bf2`):
 | 코드 | 원어 | 한글 |
@@ -303,10 +253,70 @@ Search for existing codes in Notion:
 | M | Matrix | 매트릭스 |
 
 **마스터 기능코드** (DB ID: `2d3471f8-dcff-803d-8b2c-000b5b9855af`):
-- Search for the feature code (e.g., "USR", "COM", "DASH")
-- Get the page URL for relation
+- Search for the feature code → Get page URL for relation
 
-#### 4.2 Create Screen Entries
+> **CRITICAL: 중복 기능코드 선택 규칙**
+>
+> 일부 기능코드(DCL, PMA 등)는 **여러 모듈에 동일한 코드명으로 존재**함.
+> `notion-search`로 기능코드를 검색하면 **2건 이상** 나올 수 있으므로, 반드시 **모듈 코드(`모듈 코드` relation)를 확인**하여 올바른 것을 선택해야 함.
+>
+> **앱별 모듈 코드 매핑:**
+> | 대상 앱 | 앱 폴더 | 모듈 코드 | 모듈 Page ID |
+> |--------|---------|----------|-------------|
+> | 주류 ERP | `apps/liquor` | TAX | `d71c7ac7-e101-49e9-aaad-a6ae2aea0b60` |
+> | 세무서 연동 | `apps/tax-office` | OFC | `2e3471f8-dcff-8039-836f-fa67a897ae8d` |
+>
+> **중복 기능코드 올바른 선택 테이블:**
+> | 기능코드 | 주류앱(TAX) 사용 시 | 세무서앱(OFC) 사용 시 |
+> |----------|-------------------|---------------------|
+> | DCL | `2d3471f8-dcff-8035-8fe4-c9b102554fd1` | `2e3471f8-dcff-80d2-9e5c-c51e3a37768b` |
+> | PMA | `2d3471f8-dcff-80d2-8d8d-c1304047a73e` | `2e3471f8-dcff-802f-8487-c69ee879f7a3` |
+>
+> **검증 방법**: 기능코드 페이지를 `notion-fetch`하여 `모듈 코드` relation이 대상 앱의 모듈과 일치하는지 확인.
+
+#### 4.2 화면명 네이밍 규칙 (CRITICAL)
+
+> **화면명에 화면코드를 절대 포함하지 않는다.**
+> 화면코드는 DB의 `화면 코드 ID` formula 속성에서 자동 생성되므로 화면명에 중복 기재하면 안 됨.
+
+**BAD** - 화면코드 포함:
+```
+BITDA-CM-HAC-LOG-S001 검사일지 (목록)
+BITDA-CM-HAC-LOG-F001 검사일지 등록/수정 (폼)
+BITDA-BR-DOC-EVD-P001 증빙 미리보기 Dialog
+```
+
+**GOOD** - 한글 화면명만 사용:
+```
+검사일지 (목록)
+검사일지 등록/수정 (폼)
+증빙 미리보기 Dialog
+```
+
+**네이밍 패턴**:
+| 화면유형 | 패턴 | 예시 |
+|---------|------|------|
+| S (Screen) | `[기능명]` 또는 `[기능명] (목록)` | `증빙자료 관리`, `검사품목 (목록)` |
+| F (Form) | `[기능명] 등록/수정 Sheet` 또는 `[기능명] 등록/수정 (폼)` | `보건증 등록/수정 Sheet` |
+| P (Popup) | `[기능/동작명] Dialog` | `삭제 확인 Dialog`, `구매서 선택 Dialog` |
+| R (Report) | `[리포트명]` | `월간 보고서` |
+| D (Dashboard) | `[대시보드명]` | `관리자 대시보드` |
+
+#### 4.3 Create Screen Entries
+
+> **CRITICAL: `source 링크` 필수** - 모든 화면에 GitHub source URL을 반드시 설정해야 함.
+> 빈 값으로 등록하면 notion-validator에서 Critical 오류로 검출됨.
+> 병렬 에이전트 작업 시 공유 지침에서 이 속성이 누락되면 전체 화면이 빈 URL로 등록되는 사고가 발생함.
+
+**source 링크 URL 구성 규칙:**
+| 화면유형 | URL 패턴 |
+|---------|---------|
+| S (Screen/PAGE) | `[base]/[module]/page.tsx` |
+| F (Form) | `[base]/[module]/form-page.tsx` 또는 `[base]/[module]/components/[Name]Sheet.tsx` |
+| P (Popup) | `[base]/[module]/components/[Name]Dialog.tsx` |
+
+- **base**: `https://github.com/invigoworks/pre-publishing/blob/main/apps/[app]/src/[domain]/[feature]`
+- 실제 파일이 존재하는 경로여야 함 (등록 전 `Glob`으로 확인 권장)
 
 Use `notion-create-pages` with:
 
@@ -319,8 +329,8 @@ Use `notion-create-pages` with:
   "pages": [
     {
       "properties": {
-        "화면명": "[화면명]",
-        "source 링크": "https://github.com/invigoworks/pre-publishing/blob/main/src/app/[path]",
+        "화면명": "[화면명 - 한글만, 화면코드 포함 금지]",
+        "source 링크": "https://github.com/invigoworks/pre-publishing/blob/main/[path]",
         "상태": "기획 완료",
         "화면유형 코드": "[\"[화면유형URL]\"]",
         "기능코드": "[\"[기능코드URL]\"]",
@@ -331,11 +341,33 @@ Use `notion-create-pages` with:
 }
 ```
 
-> **참고**: `연관된 기획문서`는 해당 화면의 기획 출처가 되는 기획문서(01.기획문서 DB)의 페이지 URL입니다. Phase 1에서 확인한 기획문서의 URL을 사용합니다.
+> **등록 직후 확인**: 모든 화면의 `source 링크`가 비어있지 않은지 검증. 1건이라도 빈 값이면 즉시 수정.
+
+### Phase 4.5: 기획문서 DB Prepub URL 설정 (MANDATORY)
+
+> 기획문서 DB의 `퍼블리싱 결과 확인` 속성에 prepub URL을 반드시 설정해야 함.
+> 이 속성이 화면 DB의 `미리보기 링크` 롤업으로 연결되므로, 빈 값이면 미리보기 링크도 빈 값이 됨.
+
+**Prepub URL 구성**: `https://prepub.invigoworks.co.kr/[route-path]`
+
+```
+notion-update-page({
+  page_id: "[기획문서 Page ID]",
+  command: "update_properties",
+  properties: {
+    "퍼블리싱 결과 확인": "https://prepub.invigoworks.co.kr/[route-path]"
+  }
+})
+```
+
+| 예시 | route-path | Prepub URL |
+|------|-----------|------------|
+| 기초 자료 설정 | liquor-tax/basic-data | https://prepub.invigoworks.co.kr/liquor-tax/basic-data |
+| 회사 관리 | admin/company | https://prepub.invigoworks.co.kr/admin/company |
 
 ### Phase 5: 컴포넌트 & 로직 DB 등록
 
-#### 5.1 Create Component Entries
+> Phase 2.5 완료 후 등록. FilterBar/Toolbar/Pagination은 부모 Table에 통합.
 
 Use `notion-create-pages` with:
 
@@ -359,36 +391,13 @@ Use `notion-create-pages` with:
 
 ### Phase 6: 등록 검수 (MANDATORY)
 
-> **CRITICAL**: Phase 5 완료 후 반드시 `/notion-validator` 스킬을 실행하여 등록된 데이터를 검수해야 합니다.
+Phase 5 완료 후 반드시 `/notion-validator` 스킬 실행. 검수 결과에 따라:
 
-#### 6.1 자동 검수 실행
-
-등록 완료 후 자동으로 `/notion-validator` 스킬을 호출:
-
-```typescript
-// 등록 완료 후 자동 검수
-Skill({
-  skill: "notion-validator",
-  args: "[등록된 화면 목록]"
-});
-```
-
-#### 6.2 검수 항목
-
-`/notion-validator`가 확인하는 항목:
-- source 링크 유효성 (GitHub URL 접근 가능 여부)
-- 화면코드 매핑 정확성
-- 컴포넌트 Relation 연결 상태
-- 연관된 기획문서 Relation 연결 상태
-- 필수 필드 누락 여부
-
-#### 6.3 검수 결과 처리
-
-| 검수 결과 | 처리 방법 |
-|----------|----------|
-| ✅ 검수 통과 | 등록 완료 확정 |
-| ⚠️ 경고 발견 | 사용자에게 수정 권고 |
-| ❌ 오류 발견 | 즉시 수정 후 재검수 |
+| 결과 | 처리 |
+|------|------|
+| ✅ 통과 | 등록 완료 확정 |
+| ⚠️ 경고 | 사용자에게 수정 권고 |
+| ❌ 오류 | 즉시 수정 후 재검수 |
 
 ---
 
@@ -398,63 +407,53 @@ Skill({
 - **Data Source ID**: `2d3471f8-dcff-8067-b573-000b0e2b1d04`
 - **Database URL**: https://www.notion.so/2d3471f8dcff802f945fc5add962fc6f
 
-**Schema**:
 | 속성 | 타입 | 설명 |
 |-----|------|------|
 | 화면명 | title | 화면 이름 |
 | source 링크 | url | GitHub 소스 링크 |
 | 기능코드 | relation | 마스터 기능코드 연결 |
 | 화면유형 코드 | relation | 화면유형 코드 연결 |
-| 연관된 기획문서 | relation | 기획문서 DB 연결 (화면 기획의 출처가 된 기획문서) |
+| 연관된 기획문서 | relation | 기획문서 DB 연결 |
 | 상태 | status | 시작 전/기획 중/개발 중/기획 완료/개발 완료 |
 
 ### 컴포넌트 & 로직 DB
 - **Data Source ID**: `2d3471f8-dcff-8076-a4a3-000b502a3811`
 - **Database URL**: https://www.notion.so/2d3471f8dcff80d28041f0e98910c922
 
-**Schema**:
 | 속성 | 타입 | 설명 |
 |-----|------|------|
 | 요소명(ID) | title | 컴포넌트 이름 |
 | 비즈니스 로직 | text | 백엔드 API 개발용 상세 비즈니스 로직 |
 | 화면 DB 연동 | relation | 화면 DB 연결 |
 
-### 마스터 기능코드
-- **Data Source ID**: `2d3471f8-dcff-803d-8b2c-000b5b9855af`
-
-### 화면유형 코드
-- **Data Source ID**: `2d3471f8-dcff-8051-ac76-000b25732bf2`
-
-### 기획문서 DB
-- **DB ID**: `2df471f8-dcff-80b2-9a6d-f9972b15aa06`
-- **URL**: https://www.notion.so/invigoworks/01-2df471f8dcff80c0893becf766c394b0
-- **Purpose**: 기획 초안 확인 (피드백 전 버전)
-- **Relation**: 화면 DB의 "연관된 기획문서" 컬럼에서 연결됨 (화면 기획의 출처 추적용)
+### 기타 DB
+- **마스터 기능코드**: `2d3471f8-dcff-803d-8b2c-000b5b9855af`
+- **화면유형 코드**: `2d3471f8-dcff-8051-ac76-000b25732bf2`
+- **기획문서 DB**: `2df471f8-dcff-80b2-9a6d-f9972b15aa06` ([URL](https://www.notion.so/invigoworks/01-2df471f8dcff80c0893becf766c394b0))
 
 ---
 
 ## Registration Checklist
 
-Before registering, verify:
-
-- [ ] GitHub 배포 완료 (github-deployer)
-- [ ] 디자인/기능 검토 완료
-- [ ] 화면코드 컨벤션 준수 확인
-- [ ] 기능코드 존재 여부 확인
-- [ ] 화면유형 코드 확인
-- [ ] 기획문서 내용 확인 완료 (연관된 기획문서 URL 확보)
+**Before**:
+- [ ] GitHub 배포 완료
+- [ ] 화면코드 컨벤션 준수
+- [ ] 기능코드/화면유형 코드 확인
+- [ ] 기획문서 URL 확보
 - [ ] 퍼블리싱 코드 분석 완료
-- [ ] 비즈니스 로직 상세 작성 완료 (백엔드 API 개발 가능 수준)
+- [ ] 컴포넌트 등록 단위 검증 (Phase 2.5)
+- [ ] 비즈니스 로직 상세 작성 (한글 필드명, 변수명 없음)
+- [ ] **source 링크 URL 준비** (화면별 GitHub 파일 경로 매핑)
+- [ ] **Prepub URL 준비** (기획문서별 라우트 경로 매핑)
 
-After registering, **MANDATORY**:
-
-- [ ] `/notion-validator` 스킬로 검수 완료
+**After (MANDATORY)**:
+- [ ] 모든 화면의 `source 링크`가 비어있지 않은지 확인
+- [ ] 모든 기획문서의 `퍼블리싱 결과 확인`이 비어있지 않은지 확인
+- [ ] `/notion-validator` 검수 완료
 
 ---
 
 ## Post-Registration Output
-
-After successful registration, provide:
 
 ```markdown
 ## Notion 등록 완료
@@ -462,97 +461,30 @@ After successful registration, provide:
 ### 화면 DB
 | 화면명 | 화면코드 | 상태 | 연관된 기획문서 |
 |--------|---------|------|----------------|
-| [화면명1] | BITDA-XX-XX-XX-S001 | 기획 완료 | [FEAT] 기능명 |
-| [화면명2] | BITDA-XX-XX-XX-F001 | 기획 완료 | [FEAT] 기능명 |
+| [화면명] | BITDA-XX-XX-XX-S001 | 기획 완료 | [기획문서명] |
 
-등록된 화면: [N]개 ✓
-연관된 기획문서: [기획문서 링크]
+등록된 화면: [N]개
 
 ### 컴포넌트 & 로직 DB
 | 요소명 | 연결 화면 | 비즈니스 로직 요약 |
 |--------|----------|-------------------|
-| [컴포넌트1] | [화면명1] | [CRUD 요약] |
-| [컴포넌트2] | [화면명2] | [CRUD 요약] |
+| [컴포넌트] | [화면명] | [CRUD 요약] |
 
-등록된 컴포넌트: [N]개 ✓
+등록된 컴포넌트: [N]개
 
 ### 확인 링크
 - 화면 DB: https://www.notion.so/2d3471f8dcff802f945fc5add962fc6f
 - 컴포넌트 DB: https://www.notion.so/2d3471f8dcff80d28041f0e98910c922
-
-### 백엔드 개발 참고
-비즈니스 로직에 다음 내용이 포함되어 있습니다:
-- 데이터 필드 정의 및 유효성 검사 규칙
-- CRUD 동작 상세 명세
-- 비즈니스 규칙 및 권한 체크
-- API 엔드포인트 제안
-
----
-
-## 🔍 검수 진행 중...
-
-`/notion-validator` 스킬을 실행하여 등록된 데이터를 검수합니다.
-```
-
----
-
-## Usage Examples
-
-**Example 1: Full Registration with Business Logic**
-```
-User: 방금 배포한 사용자 관리 화면 노션에 등록해줘
-
-Process:
-1. 기획문서 확인 (https://www.notion.so/invigoworks/01-2df471f8dcff80c0893becf766c394b0)
-2. GitHub 코드 분석 (퍼블리싱 코드에서 실제 구현 확인)
-3. 기획 초안 + 피드백 반영된 최종 스펙 기반으로 비즈니스 로직 작성
-4. 화면 DB 등록
-5. 컴포넌트 DB 등록 (상세 비즈니스 로직 포함)
-
-Response:
-## Notion 등록 완료
-
-### 화면 DB
-| 화면명 | 화면코드 | 상태 |
-|--------|---------|------|
-| 사용자 목록 | BITDA-CM-ADM-USR-S001 | 기획 완료 |
-| 사용자 등록/수정 | BITDA-CM-ADM-USR-F001 | 기획 완료 |
-| 사용자 삭제 확인 | BITDA-CM-ADM-USR-P001 | 기획 완료 |
-
-등록된 화면: 3개 ✓
-
-### 컴포넌트 & 로직 DB
-| 요소명 | 비즈니스 로직 요약 |
-|--------|-------------------|
-| UserTable | 목록 조회, 필터링, 정렬, 페이지네이션 |
-| UserSheet | 사용자 CRUD, 유효성 검사, 권한 체크 |
-| DeleteDialog | Soft delete, 연관 데이터 확인 |
-
-등록된 컴포넌트: 3개 ✓
-
-비즈니스 로직에 백엔드 API 개발에 필요한 상세 명세가 포함되었습니다.
-
----
-
-## 🔍 검수 진행 중...
-
-[/notion-validator 스킬 자동 실행]
-
-### 검수 결과
-✅ source 링크 유효성: 통과
-✅ 화면코드 매핑: 정상
-✅ 컴포넌트 Relation: 정상 연결
-✅ 연관된 기획문서: 정상 연결
-
-**검수 완료** - 모든 항목 통과 ✓
 ```
 
 ---
 
 ## Error Handling
 
-- **Notion Connection Failed**: Check Notion MCP authentication
-- **Duplicate Entry**: Check if screen already exists in DB
-- **Invalid Code**: Verify code follows BITDA convention
-- **Missing Relation**: Search for required code in master DBs first
-- **Incomplete Business Logic**: Ensure all CRUD operations and validation rules are documented
+| 오류 | 해결 |
+|-----|------|
+| Notion 연결 실패 | MCP 재연결 |
+| 중복 등록 | 기존 항목 확인 |
+| 코드 오류 | BITDA 컨벤션 재확인 |
+| Relation 누락 | 마스터 DB에서 코드 검색 |
+| 비즈니스 로직 부실 | Phase 3 가이드 재참조 |

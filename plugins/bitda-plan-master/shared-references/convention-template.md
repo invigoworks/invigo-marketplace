@@ -52,6 +52,7 @@ BITDA-[도메인]-[모듈]-[기능]-[화면유형][순번]
 | CUS | Customer | 거래처 |
 | WHS | Warehouse | 창고 |
 | BOM | Bill Of Materials | 자재명세서 |
+| PDCL | Product Declaration | 상품신고 |
 | LOT | LOT | 로트 설정 |
 
 ### SYS (System / 시스템관리) - CM
@@ -142,6 +143,13 @@ BITDA-[도메인]-[모듈]-[기능]-[화면유형][순번]
 		
 
 
+> **주의: 모듈 간 중복 기능코드**
+> DCL, PMA, LED, REL, DMA는 TAX와 OFC 양쪽에 동일 코드명으로 존재합니다.
+> 화면코드에서 모듈코드(TAX/OFC)로 구분되지만, Notion 마스터 기능코드 DB 검색 시 2건이 나옵니다.
+> 반드시 `모듈 코드` relation을 확인하여 올바른 모듈의 기능코드를 선택하세요.
+> - `apps/liquor` 작업 → TAX 모듈의 기능코드 선택
+> - `apps/tax-office` 작업 → OFC 모듈의 기능코드 선택
+
 ### OFC (Office / 세무사사무소) - BR
 
 | 코드 | 원어 | 한글 |
@@ -149,6 +157,7 @@ BITDA-[도메인]-[모듈]-[기능]-[화면유형][순번]
 | DASH | Dashboard | 대시보드 |
 | CLI | Client | 거래처관리 |
 | SET | Settings | 설정 |
+| NTC | Notification Center | 알림센터 |
 | PMA | Payment Management | 납부서관리 |
 | LED | Liquor Entry/Delivery Status | 주류수불상황표 |
 | REL | Release Statement | 주류반출명세서 |
@@ -218,6 +227,9 @@ BITDA-CM-MST-CUS-F001    // 거래처 등록/수정
 BITDA-CM-MST-CUS-P001    // 거래처 검색 팝업
 BITDA-CM-MST-WHS-S001    // 창고 목록
 BITDA-CM-MST-WHS-F001    // 창고 등록/수정
+BITDA-CM-MST-PDCL-S001   // 상품신고 목록
+BITDA-CM-MST-PDCL-F001   // 상품신고 등록/수정
+BITDA-CM-MST-PDCL-P001   // 상품신고 재맵핑
 ```
 
 ### 시스템관리 (CM-SYS)
@@ -357,11 +369,12 @@ BITDA-CM-ADM-SRV-S001    // 서비스 설정
 
 ## 최종 업데이트
 
-- 날짜: 2026-02-11
-- 버전: 4.3.2
+- 날짜: 2026-03-02
+- 버전: 4.3.4
 - 변경사항:
-  - PRD 모듈에 FAC(공장/설비/통), SCH(생산지시현황표) 기능코드 추가
-  - Notion 마스터 기능코드 DB와 동기화 완료
+  - MST 모듈에 PDCL(상품신고) 기능코드 추가
+- 이전 버전:
+  - 4.3.3 (2026-02-24): OFC 모듈에 NTC(알림센터) 기능코드 추가
 - 이전 버전:
   - 4.2.0 (2026-02-04): 공유 참조 파일로 통합, BR-OFC 최신화
 - Notion 원본: https://www.notion.so/invigoworks/00-BITDA-2ce471f8dcff804abd94d6a09fa4f16b

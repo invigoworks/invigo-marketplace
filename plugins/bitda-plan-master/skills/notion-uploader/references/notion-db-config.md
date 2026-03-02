@@ -161,12 +161,12 @@
 #### 1. 데이터 필드 정의
 
 ```markdown
-| 필드명 | 타입 | 필수 | 설명 |
-|--------|------|------|------|
-| id | string(UUID) | Y | 고유 ID (자동생성) |
-| name | string | Y | 이름 (2-50자) |
-| email | string | Y | 이메일 (중복 불가) |
-| status | enum | Y | 상태 (active/inactive) |
+| 항목 | 타입 | 필수 | 설명 |
+|------|------|------|------|
+| 고유 ID | string(UUID) | Y | 자동생성 |
+| 이름 | string | Y | 2-50자 |
+| 이메일 | string | Y | 중복 불가 |
+| 상태 | enum | Y | active/inactive |
 ```
 
 #### 2. CRUD 동작

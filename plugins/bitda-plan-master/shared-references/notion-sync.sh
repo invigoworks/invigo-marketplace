@@ -133,7 +133,12 @@ query_and_parse "기획 변경" "$TMPDIR_SYNC/changed" "0"
 C_CHANGED=$(cat "$TMPDIR_SYNC/changed.count")
 echo "    -> ${C_CHANGED}건" >&2
 
-TOTAL=$((C_DRAFT + C_REVIEW + C_CONFIRMED + C_CHANGED))
+echo "  쿼리: 로그 저장용..." >&2
+query_and_parse "로그 저장용" "$TMPDIR_SYNC/archived" "0"
+C_ARCHIVED=$(cat "$TMPDIR_SYNC/archived.count")
+echo "    -> ${C_ARCHIVED}건" >&2
+
+TOTAL=$((C_DRAFT + C_REVIEW + C_CONFIRMED + C_CHANGED + C_ARCHIVED))
 
 # Generate manifest
 cat > "$MANIFEST" << EOF
@@ -141,7 +146,7 @@ cat > "$MANIFEST" << EOF
 
 > 자동 생성 파일. 수동 편집 금지.
 > 최종 동기화: $SYNC_LOCAL
-> 동기화 방법: REST API (Status 속성 필터링, 4회 쿼리)
+> 동기화 방법: REST API (Status 속성 필터링, 5회 쿼리)
 > DB ID: \`$NOTION_PLAN_DB_ID\`
 > Data Source URL: \`collection://2df471f8-dcff-8083-8ce6-000b81ceb6f9\`
 > 총 페이지: ${TOTAL}건
@@ -177,6 +182,16 @@ $(cat "$TMPDIR_SYNC/confirmed")
 | 기획 명칭 | Page ID | 버전 |
 |----------|---------|------|
 $(cat "$TMPDIR_SYNC/changed")
+
+---
+
+## 로그 저장용 (${C_ARCHIVED}건)
+
+> **🚫 Claude 접근 금지**: 이 상태의 문서는 수정/상태변경하지 마세요. 사용자가 직접 관리합니다.
+
+| 기획 명칭 | Page ID | 버전 |
+|----------|---------|------|
+$(cat "$TMPDIR_SYNC/archived")
 EOF
 
 echo "매니페스트 동기화 완료: ${TOTAL}건 ($MANIFEST)" >&2
