@@ -1,8 +1,8 @@
 ---
 name: plan-review-team
 description: |
-  기획서를 3명의 전문가 팀(논리 검토, UX 검토, 컴포넌트 분석)으로 병렬 검토하는 skill입니다.
-  Agent Teams를 활용하여 3가지 관점의 검토를 동시에 수행합니다.
+  기획서를 4명의 전문가 팀(논리 검토, UX 검토, 컴포넌트 분석, 예상 질문 생성)으로 병렬 검토하는 skill입니다.
+  Agent Teams를 활용하여 4가지 관점의 검토를 동시에 수행합니다.
 
   Use this skill when:
   - User requests team-based plan review with `/plan-review-team [Notion URL or target]`
@@ -10,27 +10,28 @@ description: |
   - User asks "기획서 검토 팀 돌려줘", "팀으로 검토해줘"
   - Before using /ui-designer, to validate planning completeness
 
-  The skill creates an agent team with 3 parallel reviewers:
+  The skill creates an agent team with 4 parallel reviewers:
   - logic-reviewer: 논리적 빈틈, 누락 케이스, 의존성
   - ux-reviewer: UX 흐름, 상태 디자인, 접근성
   - component-analyst: 기존 컴포넌트 재사용, 반복 패턴
+  - question-predictor: 예상 질문 생성
 ---
 
 # Plan Review Team
 
 ## Overview
 
-기획서를 3명의 전문가가 동시에 검토하여 종합 리포트를 생성합니다.
+기획서를 4명의 전문가가 동시에 검토하여 종합 리포트를 생성합니다.
 
 ```
                     기획서 (Notion / 마크다운)
                             │
-            ┌───────────────┼───────────────┐
-            ▼               ▼               ▼
-    logic-reviewer    ux-reviewer    component-analyst
-    (논리 검토)        (UX 검토)      (컴포넌트 분석)
-            │               │               │
-            └───────────────┼───────────────┘
+        ┌───────────┬───────┼───────┬───────────┐
+        ▼           ▼       ▼       ▼           ▼
+logic-reviewer  ux-reviewer  component-analyst  question-predictor
+(논리 검토)     (UX 검토)    (컴포넌트 분석)     (예상 질문 생성)
+        │           │       │       │           │
+        └───────────┴───────┼───────┴───────────┘
                             ▼
                    leader: 종합 리포트
 ```
@@ -39,10 +40,10 @@ description: |
 
 | 항목 | plan-reviewer (단일) | plan-review-team (팀) |
 |------|---------------------|----------------------|
-| 검토자 | 1명 (순차 분석) | 3명 (병렬 분석) |
-| 관점 | 논리 중심 | 논리 + UX + 컴포넌트 |
+| 검토자 | 1명 (순차 분석) | 4명 (병렬 분석) |
+| 관점 | 논리 중심 | 논리 + UX + 컴포넌트 + 예상 질문 |
 | 소요 시간 | 빠름 | 약간 더 걸리나 깊이 있음 |
-| 토큰 비용 | 낮음 | 높음 (3x) |
+| 토큰 비용 | 낮음 | 높음 (4x) |
 | 적합 상황 | 간단한 기획, 빠른 확인 | UI 개발 전 종합 검토 |
 
 ## Trigger
@@ -87,14 +88,15 @@ Page ID 추출 후 Notion MCP로 조회.
    Description: 기획서 검토 팀
    ```
 
-3. **작업 생성** (3개)
+3. **작업 생성** (4개)
    - Task #1: 기획서 논리적 완성도 검토
    - Task #2: UX/사용자 경험 관점 검토
    - Task #3: 기존 컴포넌트 재사용 분석
+   - Task #4: 예상 질문 생성 (FE/BE/사업부)
 
-### Phase 2: 팀원 생성 (3명 동시)
+### Phase 2: 팀원 생성 (4명 동시)
 
-**중요: 3명을 반드시 동시에(하나의 메시지에서) 생성해야 병렬 실행됨.**
+**중요: 4명을 반드시 동시에(하나의 메시지에서) 생성해야 병렬 실행됨.**
 
 #### Teammate 1: logic-reviewer
 
@@ -138,11 +140,25 @@ Task({
 
 Prompt는 `references/component-analyst-prompt.md` 참조.
 
+#### Teammate 4: question-predictor
+
+```
+Task({
+  name: "question-predictor",
+  team_name: "plan-review",
+  subagent_type: "general-purpose",
+  mode: "bypassPermissions",
+  prompt: <question-predictor-prompt with page ID>
+})
+```
+
+Prompt는 `references/question-predictor-prompt.md` 참조.
+
 ### Phase 3: 결과 대기
 
-- 3명의 팀원이 각자 검토 완료 후 SendMessage로 보고
+- 4명의 팀원이 각자 검토 완료 후 SendMessage로 보고
 - 각 보고 수신 시 해당 Task를 completed로 업데이트
-- 3명 모두 완료될 때까지 대기
+- 4명 모두 완료될 때까지 대기
 
 ### Phase 4: 종합 리포트 작성
 
@@ -152,7 +168,7 @@ Prompt는 `references/component-analyst-prompt.md` 참조.
 # 기획 검토 종합 리포트
 
 ## 검토 대상: [기획서 제목]
-검토자: logic-reviewer, ux-reviewer, component-analyst
+검토자: logic-reviewer, ux-reviewer, component-analyst, question-predictor
 
 ## Critical (즉시 해결 필요) - N건
 | # | 관점 | 발견 사항 | 제안 |
@@ -175,13 +191,29 @@ Prompt는 `references/component-analyst-prompt.md` 참조.
 ### 공통화 권장 (기존 중복 해소)
 | 대상 | 현재 상태 | 권장 조치 |
 
+## 예상 질문 (FAQ 후보)
+### FE 관점
+| # | 질문 | 관련 섹션 | 심각도 |
+|---|------|----------|--------|
+
+### BE 관점
+| # | 질문 | 관련 섹션 | 심각도 |
+|---|------|----------|--------|
+
+### 사업부 관점
+| # | 질문 | 관련 섹션 | 심각도 |
+|---|------|----------|--------|
+
+### 기획서 보강 제안
+- ...
+
 ## 확인 필요 질문
 1. ...
 ```
 
 ### Phase 5: 팀 정리
 
-1. 3명 팀원에게 shutdown_request 전송
+1. 4명 팀원에게 shutdown_request 전송
 2. 종료 확인 후 TeamDelete 실행
 
 ---
@@ -193,6 +225,7 @@ Prompt는 `references/component-analyst-prompt.md` 참조.
 | `references/logic-reviewer-prompt.md` | logic-reviewer 팀원 프롬프트 |
 | `references/ux-reviewer-prompt.md` | ux-reviewer 팀원 프롬프트 |
 | `references/component-analyst-prompt.md` | component-analyst 팀원 프롬프트 |
+| `references/question-predictor-prompt.md` | question-predictor 팀원 프롬프트 |
 
 ---
 
@@ -215,9 +248,9 @@ Prompt는 `references/component-analyst-prompt.md` 참조.
 User: /plan-review-team https://www.notion.so/workspace/FEAT-abc123def456
 
 Response:
-기획서를 3명의 전문가가 동시에 검토합니다.
+기획서를 4명의 전문가가 동시에 검토합니다.
 
-[팀 생성 → 3명 동시 생성 → 결과 대기 → 종합 리포트]
+[팀 생성 → 4명 동시 생성 → 결과 대기 → 종합 리포트]
 
 # 기획 검토 종합 리포트
 ## 검토 대상: [FEAT] 실감량 관리 v1.3
