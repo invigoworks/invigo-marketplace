@@ -4,9 +4,41 @@
 
 ---
 
+## REST API 업로드 (권장 방식)
+
+> **2026-03-10 도입**: MCP 대비 10배 빠르고, 토큰 소비 0, 테이블 깨짐 없음.
+
+```
+콘텐츠 작성 완료
+    │
+    ├─ Step 1: 콘텐츠를 /tmp/plan-content-validate-input.md에 저장
+    ├─ Step 2: python3 /tmp/validate-plan-tables.py 실행 (검수)
+    │   ├─ PASS → Step 3 진행
+    │   ├─ FIXED → /tmp/plan-content-validate-fixed.md 사용
+    │   └─ FAIL → 수동 수정 후 재검수
+    │
+    ├─ Step 3: REST API 업로드 (택 1)
+    │   ├─ 신규: python .claude/shared-references/notion-md-uploader.py <md파일> --title "제목"
+    │   └─ 기존: python .claude/shared-references/notion-md-uploader.py <md파일> --page-id "ID"
+    │
+    └─ Step 4: 속성 업데이트 (필요 시)
+        └─ MCP notion-update-page update_properties 사용
+```
+
+### REST API vs MCP 비교
+
+| 항목 | REST API (`notion-md-uploader.py`) | MCP (`replace_content`) |
+|------|-------------------------------------|------------------------|
+| 속도 | 264블록 38초 | 섹션당 30-60초 |
+| 토큰 | 0 (Bash 실행) | 10k-20k/회 |
+| 테이블 안정성 | HTML 직접 파싱, 깨짐 없음 | 텍스트 매칭 실패, doubled columns |
+| 적합 상황 | **신규 생성, 전체 교체** | 소규모 부분 수정 (1-2곳) |
+
+---
+
 ## 규칙 1: Notion 업로드 전 검수 필수 (MANDATORY)
 
-> plan-content-validator를 Notion 업로드 **전에 반드시** 실행합니다. (모든 Mode 공통)
+> plan-content-validator를 Notion 업로드 **전에 반드시** 실행합니다. (모든 Mode 공통, REST API/MCP 모두)
 
 ```
 콘텐츠 작성 완료
@@ -63,14 +95,14 @@ notion-update-page({
 
 ## 규칙 3: Notion 업데이트 전략 (권장 순서)
 
-| 상황 | 권장 명령 | 이유 |
+| 상황 | 권장 도구 | 이유 |
 |------|----------|------|
-| 신규 문서 생성 | `replace_content` | 전체 콘텐츠를 한번에 업로드 |
-| 전체 콘텐츠 재작성 | `replace_content` | 가장 안전, 구조 깨짐 없음 |
-| 특정 섹션 수정 (1~2곳) | `replace_content_range` | 부분 교체, selection 정확히 지정 |
-| 다수 섹션 수정 (3곳+) | `replace_content` | 부분 교체 누적 시 오류 위험 |
-| 새 섹션 추가 | `replace_content_range` | 인접 섹션까지 포함하여 교체 |
+| **신규 문서 생성** | **REST API** `notion-md-uploader.py --title` | 38초에 전체 업로드, 토큰 0 |
+| **전체 콘텐츠 재작성** | **REST API** `notion-md-uploader.py --page-id` | 가장 빠르고 안정적 |
+| **다수 섹션 수정 (3곳+)** | **REST API** 전체 재업로드 | 부분 교체 누적 시 오류 위험 |
+| 특정 섹션 수정 (1~2곳) | MCP `replace_content_range` | 소규모 변경에 적합 |
 | ~~섹션 삽입~~ | ~~`insert_content_after`~~ | **사용 금지** |
+| 속성만 업데이트 | MCP `update_properties` | 속성 전용 |
 
 ---
 

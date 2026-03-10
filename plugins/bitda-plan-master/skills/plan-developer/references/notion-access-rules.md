@@ -5,7 +5,26 @@
 > - ❌ `Playwright` (browser_navigate, browser_snapshot 등) - Notion 페이지를 브라우저로 열지 말 것
 > - ❌ 기타 웹 스크래핑 도구
 
-> **✅ 반드시 사용**: Notion 관련 모든 작업은 **Notion MCP 도구**만 사용
+> **✅ 콘텐츠 업로드**: `python .claude/shared-references/notion-md-uploader.py` (REST API, 빠르고 안정적)
+> **✅ 읽기/속성 업데이트**: Notion MCP 도구 사용
+
+### REST API 업로드 스크립트 (`.claude/shared-references/notion-md-uploader.py`)
+
+> **2026-03-10 도입**: MCP `replace_content` 대비 10배 빠르고 토큰 소비 0.
+> 52KB 마크다운 → 264블록 → 38초에 업로드 완료 (MCP는 동일 문서에 10-20분+).
+
+```bash
+# 신규 페이지 생성 + 콘텐츠 업로드
+python .claude/shared-references/notion-md-uploader.py /tmp/plan-content-validate-input.md --title "[FEAT] 기능명"
+
+# 기존 페이지에 콘텐츠 추가
+python .claude/shared-references/notion-md-uploader.py /tmp/plan-content-validate-input.md --page-id "페이지ID"
+
+# 블록 변환만 테스트 (업로드 안 함)
+python .claude/shared-references/notion-md-uploader.py /tmp/plan-content-validate-input.md --dry-run
+```
+
+지원 포맷: `<table header-row="true">` HTML 테이블, `## / ### / ####` 헤딩, ` ``` ` 코드블록, `> ` 인용/콜아웃, `- / * / 1.` 리스트, `---` 구분선, `**bold** / \`code\`  / [text](url)` 인라인.
 
 ---
 
