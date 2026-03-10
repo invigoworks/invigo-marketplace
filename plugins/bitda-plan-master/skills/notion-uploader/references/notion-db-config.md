@@ -48,7 +48,8 @@
 
 | 항목 | 값 |
 |-----|-----|
-| Data Source ID | `2d3471f8-dcff-803d-8b2c-000b5b9855af` |
+| Data Source ID (MCP) | `2d3471f8-dcff-803d-8b2c-000b5b9855af` |
+| Database ID (REST API) | `2d3471f8-dcff-80cd-9de7-dac5de60856a` |
 | Purpose | 기능코드 마스터 (참조용) |
 
 **주요 기능코드:**
@@ -74,7 +75,8 @@
 
 | 항목 | 값 |
 |-----|-----|
-| Data Source ID | `2d3471f8-dcff-8051-ac76-000b25732bf2` |
+| Data Source ID (MCP) | `2d3471f8-dcff-8051-ac76-000b25732bf2` |
+| Database ID (REST API) | `c7255e5a-4433-4977-95cb-18b1f8d31a39` |
 | Purpose | 화면유형 코드 마스터 (참조용) |
 
 **화면유형:**

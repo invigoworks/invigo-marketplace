@@ -16,21 +16,29 @@ This skill handles the Notion registration phase for BITDA ERP UI:
 
 ## Prerequisites
 
-- **Notion MCP**: Connected and authenticated
+- **REST API Script**: `.claude/shared-references/notion-db-uploader.py` for DB 행 등록 (화면/컴포넌트)
+- **Notion MCP**: 읽기(`notion-fetch`, `notion-search`)와 속성 업데이트(`notion-update-page update_properties`)용
 - **GitHub Deployment**: Code already pushed via github-deployer skill
 - **Design Review**: UI confirmed and ready for registration
 
 ---
 
-## STEP 0: Notion MCP 연결 확인
+## 도구 분담 (REST API vs MCP)
 
-`notion-get-self` 도구를 호출하여 연결 상태 확인. 실패 시 사용자에게 MCP 재연결 안내 후 중단.
+| 작업 | 도구 | 이유 |
+|------|------|------|
+| **화면/컴포넌트 DB 행 등록** | `python .claude/shared-references/notion-db-uploader.py` | 빠르고 안정적, 토큰 0 |
+| **마스터 코드 조회** | REST API `lookup` 명령 또는 MCP `notion-search` | 자동 해석 |
+| **속성 업데이트** | MCP `notion-update-page update_properties` | 속성 전용 |
+| **페이지 조회** | MCP `notion-fetch`, `notion-search` | 읽기 전용 |
+| **테스트 데이터 삭제** | REST API `archive` 명령 | 빠른 정리 |
 
 ---
 
 ## Reference Files
 
 - `../../shared-references/convention-template.md`: BITDA ERP screen code conventions (shared)
+- `../../shared-references/notion-db-uploader.py`: REST API DB 행 등록 스크립트
 - `references/notion-db-config.md`: Notion database IDs and schemas
 - `references/agent-integration-guide.md`: Specialized agent usage for documentation quality
 
@@ -318,27 +326,63 @@ BITDA-BR-DOC-EVD-P001 증빙 미리보기 Dialog
 - **base**: `https://github.com/invigoworks/pre-publishing/blob/main/apps/[app]/src/[domain]/[feature]`
 - 실제 파일이 존재하는 경로여야 함 (등록 전 `Glob`으로 확인 권장)
 
-Use `notion-create-pages` with:
+**REST API로 등록** (권장):
 
+```bash
+# 단일 화면 등록
+python .claude/shared-references/notion-db-uploader.py screen \
+  --title "검사일지 (목록)" \
+  --source "https://github.com/invigoworks/pre-publishing/blob/main/apps/liquor/src/haccp/inspection-log/page.tsx" \
+  --status "기획 완료" \
+  --screen-type "S" \
+  --feature-code "LOG" \
+  --plan-doc "기획문서-page-id"
+
+# 일괄 등록 (JSON 파일)
+python .claude/shared-references/notion-db-uploader.py batch --file /tmp/entries.json
+```
+
+**JSON 일괄 등록 형식:**
 ```json
 {
-  "parent": {
-    "type": "data_source_id",
-    "data_source_id": "2d3471f8-dcff-8067-b573-000b0e2b1d04"
-  },
-  "pages": [
+  "screens": [
     {
-      "properties": {
-        "화면명": "[화면명 - 한글만, 화면코드 포함 금지]",
-        "source 링크": "https://github.com/invigoworks/pre-publishing/blob/main/[path]",
-        "상태": "기획 완료",
-        "화면유형 코드": "[\"[화면유형URL]\"]",
-        "기능코드": "[\"[기능코드URL]\"]",
-        "연관된 기획문서": "[\"[기획문서URL]\"]"
-      }
+      "title": "검사일지 (목록)",
+      "source": "https://github.com/invigoworks/pre-publishing/blob/main/...",
+      "status": "기획 완료",
+      "screen_type": "S",
+      "feature_code": "LOG",
+      "plan_doc": "기획문서-page-id"
+    }
+  ],
+  "components": [
+    {
+      "title": "InspectionTable",
+      "logic": "## 목록 조회\n- GET /api/v1/inspections\n...",
+      "screen": "auto:0"
     }
   ]
 }
+```
+
+> `"screen": "auto:0"` → 같은 JSON의 screens[0] page_id를 자동 참조
+
+**MCP 대체 사용법** (REST API 실패 시 fallback):
+
+```json
+notion-create-pages({
+  parent: { data_source_id: "2d3471f8-dcff-8067-b573-000b0e2b1d04" },
+  pages: [{
+    properties: {
+      "화면명": "[화면명]",
+      "source 링크": "https://github.com/.../[path]",
+      "상태": "기획 완료",
+      "화면유형 코드": "[\"[화면유형URL]\"]",
+      "기능코드": "[\"[기능코드URL]\"]",
+      "연관된 기획문서": "[\"[기획문서URL]\"]"
+    }
+  }]
+})
 ```
 
 > **등록 직후 확인**: 모든 화면의 `source 링크`가 비어있지 않은지 검증. 1건이라도 빈 값이면 즉시 수정.
@@ -369,24 +413,37 @@ notion-update-page({
 
 > Phase 2.5 완료 후 등록. FilterBar/Toolbar/Pagination은 부모 Table에 통합.
 
-Use `notion-create-pages` with:
+**REST API로 등록** (권장):
+
+```bash
+# 단일 컴포넌트 등록
+python .claude/shared-references/notion-db-uploader.py component \
+  --title "InspectionTable" \
+  --logic-file /tmp/inspection-table-logic.md \
+  --screen "화면-page-id"
+
+# 비즈니스 로직을 인라인으로 전달
+python .claude/shared-references/notion-db-uploader.py component \
+  --title "InspectionSheet" \
+  --logic "## 등록/수정\n- POST /api/v1/inspections\n..." \
+  --screen "화면-page-id"
+```
+
+> 비즈니스 로직이 긴 경우 `--logic-file`로 파일 경로 전달 권장 (2000자 자동 분할)
+
+**MCP 대체 사용법** (REST API 실패 시 fallback):
 
 ```json
-{
-  "parent": {
-    "type": "data_source_id",
-    "data_source_id": "2d3471f8-dcff-8076-a4a3-000b502a3811"
-  },
-  "pages": [
-    {
-      "properties": {
-        "요소명(ID)": "[컴포넌트명]",
-        "비즈니스 로직": "[상세 비즈니스 로직 - Phase 3 형식 참조]",
-        "화면 DB 연동": "[\"[화면URL]\"]"
-      }
+notion-create-pages({
+  parent: { data_source_id: "2d3471f8-dcff-8076-a4a3-000b502a3811" },
+  pages: [{
+    properties: {
+      "요소명(ID)": "[컴포넌트명]",
+      "비즈니스 로직": "[상세 비즈니스 로직]",
+      "화면 DB 연동": "[\"[화면URL]\"]"
     }
-  ]
-}
+  }]
+})
 ```
 
 ### Phase 6: 등록 검수 (MANDATORY)
@@ -427,9 +484,14 @@ Phase 5 완료 후 반드시 `/notion-validator` 스킬 실행. 검수 결과에
 | 화면 DB 연동 | relation | 화면 DB 연결 |
 
 ### 기타 DB
-- **마스터 기능코드**: `2d3471f8-dcff-803d-8b2c-000b5b9855af`
-- **화면유형 코드**: `2d3471f8-dcff-8051-ac76-000b25732bf2`
-- **기획문서 DB**: `2df471f8-dcff-80b2-9a6d-f9972b15aa06` ([URL](https://www.notion.so/invigoworks/01-2df471f8dcff80c0893becf766c394b0))
+
+> **⚠️ REST API vs MCP ID 차이**: MCP Data Source ID와 REST API Database ID가 다른 경우 있음. `notion-db-uploader.py`에 올바른 REST API ID가 하드코딩되어 있으므로 스크립트 사용 시 별도 ID 지정 불필요.
+
+| DB | MCP Data Source ID | REST API Database ID |
+|----|----|---|
+| 마스터 기능코드 | `2d3471f8-dcff-803d-8b2c-000b5b9855af` | `2d3471f8-dcff-80cd-9de7-dac5de60856a` |
+| 화면유형 코드 | `2d3471f8-dcff-8051-ac76-000b25732bf2` | `c7255e5a-4433-4977-95cb-18b1f8d31a39` |
+| 기획문서 DB | `2df471f8-dcff-80b2-9a6d-f9972b15aa06` | 동일 ([URL](https://www.notion.so/invigoworks/01-2df471f8dcff80c0893becf766c394b0)) |
 
 ---
 
