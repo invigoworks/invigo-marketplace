@@ -196,7 +196,7 @@ data class BusinessRegistrationNumber(val value: String) {
 | Value Object | 설명 |
 |--------------|------|
 | `BusinessRegistrationNumber` | 사업자등록번호 (10자리 검증) |
-| `UserRole` | 사용자 역할 (ADMIN, OWNER, MEMBER) |
+| `UserRole` | 사용자 역할 (ADMIN, OWNER, USER) |
 
 #### Domain Event (도메인 이벤트)
 

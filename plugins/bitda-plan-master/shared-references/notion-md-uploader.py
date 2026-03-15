@@ -5,7 +5,14 @@
 MCP 대비 속도/안정성 테스트용.
 
 사용법:
-  python tools/notion-md-uploader.py <markdown_file> [--title "제목"] [--dry-run]
+  # 신규 페이지 생성
+  python notion-md-uploader.py <markdown_file> --title "제목"
+  # 기존 페이지 전체 교체 (블록 삭제 후 재업로드)
+  python notion-md-uploader.py <markdown_file> --page-id "ID" --replace
+  # 기존 페이지에 콘텐츠 추가 (append)
+  python notion-md-uploader.py <markdown_file> --page-id "ID"
+  # 블록 변환만 테스트
+  python notion-md-uploader.py <markdown_file> --dry-run
 
 환경변수:
   NOTION_TOKEN: Notion Integration 토큰
@@ -22,6 +29,8 @@ import sys
 import time
 from pathlib import Path
 
+import asyncio
+
 import httpx
 
 NOTION_API = "https://api.notion.com/v1"
@@ -33,13 +42,18 @@ MAX_BLOCKS_PER_BATCH = 100
 def _headers() -> dict:
     token = os.environ.get("NOTION_TOKEN", "")
     if not token:
-        # Try loading from .env
-        env_path = Path(__file__).resolve().parent.parent / ".env"
-        if env_path.exists():
-            for line in env_path.read_text().splitlines():
-                if line.startswith("NOTION_TOKEN="):
-                    token = line.split("=", 1)[1].strip()
-                    break
+        # Try loading from .env — search upward from script location
+        search = Path(__file__).resolve().parent
+        for _ in range(5):
+            env_path = search / ".env"
+            if env_path.exists():
+                for line in env_path.read_text().splitlines():
+                    if line.startswith("NOTION_TOKEN="):
+                        token = line.split("=", 1)[1].strip()
+                        break
+            if token:
+                break
+            search = search.parent
     if not token:
         print("❌ NOTION_TOKEN 환경변수가 설정되지 않았습니다.")
         sys.exit(1)
@@ -85,6 +99,82 @@ def create_page(db_id: str, title: str) -> str:
 
 
 # ─── Block Upload ────────────────────────────────────────────────
+
+
+def get_child_block_ids(page_id: str) -> list[str]:
+    """Get all child block IDs of a page (for deletion)."""
+    block_ids: list[str] = []
+    cursor = None
+    while True:
+        params: dict = {"page_size": 100}
+        if cursor:
+            params["start_cursor"] = cursor
+        resp = httpx.get(
+            f"{NOTION_API}/blocks/{page_id}/children",
+            headers=_headers(),
+            params=params,
+            timeout=30,
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        for block in data.get("results", []):
+            block_ids.append(block["id"])
+        if not data.get("has_more"):
+            break
+        cursor = data.get("next_cursor")
+    return block_ids
+
+
+async def _delete_blocks_async(block_ids: list[str], concurrency: int = 10) -> int:
+    """Delete blocks concurrently with semaphore-based rate limiting."""
+    sem = asyncio.Semaphore(concurrency)
+    deleted = 0
+    headers = _headers()
+
+    async def _delete_one(client: httpx.AsyncClient, bid: str) -> bool:
+        async with sem:
+            resp = await client.delete(
+                f"{NOTION_API}/blocks/{bid}",
+                headers=headers,
+                timeout=30,
+            )
+            return resp.status_code == 200
+
+    async with httpx.AsyncClient() as client:
+        tasks = [_delete_one(client, bid) for bid in block_ids]
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+        deleted = sum(1 for r in results if r is True)
+
+    return deleted
+
+
+def delete_all_blocks(page_id: str) -> int:
+    """Delete all child blocks of a page. Returns count of deleted blocks."""
+    block_ids = get_child_block_ids(page_id)
+    if not block_ids:
+        print("   ℹ️  삭제할 블록 없음")
+        return 0
+
+    print(f"   🗑️  기존 블록 {len(block_ids)}개 병렬 삭제 중...")
+    deleted = asyncio.run(_delete_blocks_async(block_ids))
+    print(f"   ✅ {deleted}/{len(block_ids)}개 블록 삭제 완료")
+    return deleted
+
+
+def update_page_properties(page_id: str, properties: dict) -> None:
+    """Update page properties via Notion API."""
+    body = {"properties": properties}
+    resp = httpx.patch(
+        f"{NOTION_API}/pages/{page_id}",
+        headers=_headers(),
+        json=body,
+        timeout=30,
+    )
+    if resp.status_code == 200:
+        print(f"   ✅ 속성 업데이트 완료")
+    else:
+        print(f"   ❌ 속성 업데이트 실패: {resp.status_code}")
+        print(f"   Response: {resp.text[:300]}")
 
 
 def append_blocks(page_id: str, blocks: list[dict]) -> None:
@@ -478,6 +568,8 @@ def main():
     parser.add_argument("--db-id", default=DEFAULT_DB_ID, help="Notion DB ID")
     parser.add_argument("--dry-run", action="store_true", help="블록 변환만 하고 업로드하지 않음")
     parser.add_argument("--page-id", help="기존 페이지에 콘텐츠 추가 (신규 생성 안 함)")
+    parser.add_argument("--replace", action="store_true", help="기존 페이지 콘텐츠를 전체 교체 (--page-id와 함께 사용)")
+    parser.add_argument("--version", type=float, help="버전 속성 업데이트 (예: 3.8)")
     args = parser.parse_args()
 
     # Read markdown file
@@ -514,7 +606,13 @@ def main():
     title = args.title or md_path.stem
     if args.page_id:
         page_id = args.page_id
-        print(f"📝 기존 페이지에 추가: {page_id}")
+        if args.replace:
+            print(f"\n🔄 기존 페이지 전체 교체: {page_id}")
+            t_del = time.time()
+            delete_all_blocks(page_id)
+            print(f"   삭제 소요: {time.time() - t_del:.1f}s")
+        else:
+            print(f"📝 기존 페이지에 추가: {page_id}")
     else:
         print(f"\n📝 새 페이지 생성: '{title}'")
         page_id = create_page(args.db_id, title)
@@ -526,6 +624,13 @@ def main():
     elapsed = time.time() - t0
     print(f"\n✅ 업로드 완료! 총 {elapsed:.1f}초 소요")
     print(f"   페이지 ID: {page_id}")
+
+    # Update version property if specified
+    if args.version:
+        print(f"\n📋 버전 속성 업데이트: {args.version}")
+        update_page_properties(page_id, {
+            "버전": {"number": args.version},
+        })
 
 
 if __name__ == "__main__":

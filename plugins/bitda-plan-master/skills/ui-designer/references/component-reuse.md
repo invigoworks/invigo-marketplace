@@ -161,3 +161,19 @@ const statusConfig = {
 | `<h1>` 페이지 타이틀 | `PageTitle` | `@bitda/web-platform` |
 | `Search` 아이콘 + `Input` 조합 | `SearchInput` | `@bitda/web-platform` |
 | 커스텀 다중선택 Popover | `MultiItemSelectDialog` | `@bitda/web-platform` |
+
+---
+
+## 컴포넌트 재사용 실패 방지 (기획봇 인사이트 #85)
+
+> 기획봇 에스컬레이션에서 반복 발견된 컴포넌트 재사용 누락 패턴.
+
+### 체크리스트
+
+- [ ] **DownloadButton 재사용**: 다운로드/내보내기 버튼 구현 시 `@bitda/web-platform`의 `DownloadButton`을 먼저 확인했는가? 커스텀 구현 전 기존 컴포넌트의 prop API를 확인할 것.
+- [ ] **모드별 필드 동작 분기**: 동일 폼에서 신규/수정 모드에 따라 필드 활성화/비활성화가 달라지는 경우, 모드별 disabled 조건을 컴포넌트 prop으로 분리했는가? (인라인 삼항 반복 방지)
+- [ ] **유사 페이지 컴포넌트 참조**: 새 페이지 생성 시 동일 도메인의 유사 페이지에서 이미 사용 중인 컴포넌트 목록을 확인했는가?
+
+### 근거 사례
+- 재고 조정/이동 페이지에서 DownloadButton 대신 커스텀 버튼 구현 → 스타일 불일치 (인사이트 #85)
+- 신규/수정 모드 필드 동작 차이를 인라인으로 반복 구현 → 동일 로직 3곳 이상 중복
