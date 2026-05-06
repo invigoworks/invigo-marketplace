@@ -37,6 +37,9 @@ argument-hint: "[선택사항: 특정 verify 스킬 이름]"
 | 6 | `verify-plan-changes` | 기획 변경사항의 코드 전파 검증 (필드명 변경, 공식 수정, 조건 추가, 상수 업데이트) |
 | 7 | `verify-dialog-safety` | Dialog/Sheet 안전성 검증 (sibling dialog 가드, isDirty 연쇄 방지, state 초기화, DialogDescription, destructive variant, ScrollArea flex 충돌) |
 | 8 | `verify-data-consistency` | 타입-스키마 동기화, mock 데이터 비즈니스 규칙 준수, 레코드/품목 레벨 속성 정합성 검증 |
+| 9 | `verify-runtime-data` | 런타임 데이터 불일치 검증 (availableQty/currentQty, stocks 빈 배열, formatDate NaN, purchaseDate 접근, entity 필수 필드, refId UUID 노출) |
+| 10 | `verify-dev-server-health` | Dev 서버/HMR 런타임 에러 진단 (@fs 404, dynamic import 실패, 포트 충돌, stale HMR) |
+| 11 | `verify-service-match` | 실서비스(data/bitda-front, data/bitda-back)와 현재 구현 간 정합성 검증 — UI(P1~13), 템플릿(P14~16), PDF폰트(P17), **ExcelColumn 속성값(P18)**, **templateMode 출력 동작(P19: readOnly필터/빈행스타일/SheetBlock)** |
 
 ## 워크플로우
 

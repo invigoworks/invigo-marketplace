@@ -130,6 +130,43 @@ types.ts에 `*_COLORS` 상수가 있으면 위반입니다. Colors는 `constants
 **PASS:** labels → types.ts, colors → constants.ts 분리 준수
 **FAIL:** labels/colors가 잘못된 파일에 위치
 
+### Step 5: StatusBadge labels fallback 누락 검증
+
+**검사:** StatusBadge에 커스텀 `labels` prop을 전달하는 경우, labels에 누락된 상태값이 있으면 영어 raw 값이 표시됨.
+특히 상태 용어 변경(예: CONFIRMED→APPROVED) 후 localStorage에 잔존하는 이전 값에 대한 fallback이 필요.
+
+**배경:** StatusBadge는 `labels?.[status] ?? presetConfig?.labels[status] ?? status`로 라벨을 결정함.
+labels prop이 주어지면 preset을 사용하지 않고, labels에 없는 키는 raw status 그대로 표시.
+
+**감지 방법:**
+```bash
+# StatusBadge에 커스텀 labels를 전달하는 곳 찾기
+grep -rn "StatusBadge" apps/*/src/ --include="*.tsx" -A3 | grep "labels="
+```
+
+발견된 각 사용처에서:
+1. labels Record의 키 목록 확인
+2. 해당 도메인의 이전 상태값(레거시 마이그레이션)이 포함되어 있는지 확인
+3. 특히 최근 rename된 상태값 (CONFIRMED→APPROVED, TRANSMITTED→SUBMITTED, UPDATE→DRAFT)
+
+**PASS:** 커스텀 labels가 이전 상태값 fallback을 포함하거나, preset만 사용
+**FAIL:** 커스텀 labels에 이전 상태값이 누락되어 영어 raw 값 표시 가능성 있음
+
+**수정 예시:**
+```typescript
+// Before (fallback 없음)
+const LABELS: Record<DeclarationStatus, string> = {
+  DRAFT: "작성중", SUBMITTED: "제출완료", APPROVED: "승인", REJECTED: "반려",
+};
+
+// After (이전 상태값 fallback 포함)
+const LABELS: Record<string, string> = {
+  DRAFT: "작성중", SUBMITTED: "제출완료", APPROVED: "승인", REJECTED: "반려",
+  // 이전 상태값 fallback (localStorage 잔존 데이터)
+  UPDATE: "작성중", TRANSMITTED: "제출완료", CONFIRMED: "승인",
+};
+```
+
 ## Output Format
 
 ```markdown
