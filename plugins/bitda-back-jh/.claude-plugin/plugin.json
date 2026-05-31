@@ -1,0 +1,11 @@
+{
+  "name": "bitda-back-jh",
+  "version": "1.0.0",
+  "description": "BITDA 백엔드(bitda-back) 개발 워크플로우: 30 skills (issue-full-cycle 파이프라인: issue-plan/impl-remote/pr/review/jenkins-ci-loop/pr-merge, gap-analyze, swagger-snapshot, api-to-notion 등) + hooks. 생산관리 도메인 함정 규칙 + 원격 Gradle/Jenkins CI 자동화 내장.",
+  "author": {
+    "name": "jh-kim30"
+  },
+  "license": "MIT",
+  "skills": "./skills",
+  "hooks": "./hooks"
+}

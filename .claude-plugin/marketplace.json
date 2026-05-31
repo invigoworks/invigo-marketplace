@@ -31,6 +31,17 @@
       "homepage": "https://github.com/invigoworks/invigo-marketplace",
       "tags": ["erp", "planning", "ui", "review", "deployment", "notion", "playwright", "bitda"],
       "source": "./plugins/bitda-plan-master"
+    },
+    {
+      "name": "bitda-back-jh",
+      "description": "BITDA 백엔드(bitda-back) 개발 워크플로우: 30 skills — issue-full-cycle 파이프라인(issue-plan/impl-remote/pr/pr-review/review-action/jenkins-ci-loop/pr-merge), gap-analyze, swagger-snapshot, api-to-notion + hooks. 생산관리 도메인 함정 규칙 및 원격 Gradle/Jenkins CI 자동화 내장.",
+      "version": "1.0.0",
+      "author": {
+        "name": "jh-kim30"
+      },
+      "homepage": "https://github.com/invigoworks/invigo-marketplace",
+      "tags": ["backend", "kotlin", "spring", "ci", "jenkins", "issue-cycle", "review", "bitda"],
+      "source": "./plugins/bitda-back-jh"
     }
   ]
 }
