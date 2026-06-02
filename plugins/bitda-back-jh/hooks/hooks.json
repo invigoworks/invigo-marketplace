@@ -1,7 +1,9 @@
 {
+  "description": "bitda-back development workflow hooks: SessionStart guide injection, .kt ktlintCheck on edit, PreCompact rule re-injection",
   "hooks": {
     "SessionStart": [
       {
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
@@ -23,6 +25,7 @@
     ],
     "PreCompact": [
       {
+        "matcher": "*",
         "hooks": [
           {
             "type": "command",
