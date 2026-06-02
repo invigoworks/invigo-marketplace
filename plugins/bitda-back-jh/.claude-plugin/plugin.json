@@ -6,6 +6,5 @@
     "name": "jh-kim30"
   },
   "license": "MIT",
-  "skills": "./skills",
-  "hooks": "./hooks"
+  "skills": "./skills"
 }
