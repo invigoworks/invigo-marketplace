@@ -21,7 +21,12 @@ description: |
 
 ## 전제 조건
 
-- Docker 인프라(PostgreSQL, Keycloak)가 실행 중이어야 함 (`./docker/start.sh`)
+- **Docker 엔진(OrbStack) 실행 중**이어야 함. OrbStack 앱이 떠 있어도 엔진이 꺼져 있을 수 있음 → `orbctl start` 후 `docker ps`로 확인.
+- Docker 인프라(PostgreSQL, Keycloak)가 실행 중이어야 함. **반드시 local override 포함 기동**:
+  ```bash
+  cd docker && docker compose -f docker-compose.yml -f docker-compose.local.yml -p bitda up -d
+  ```
+  > ⚠️ `./docker/start.sh`(plain `docker compose up -d`) 금지. 자동 병합되는 `docker-compose.override.yml`(dev 서버용)이 (1) 네트워크 subnet 미고정 → OrbStack가 192.168.x 할당 → `pg_hba.conf`(172.16/12만 허용)가 keycloak/infra 인증 거부, (2) Keycloak SPI(`BITDA_API_BASE_URL`)를 운영서버로 보내 로그인이 timeout(curl 28)된다. `docker-compose.local.yml`이 subnet을 172.20.0.0/16로 고정하고 SPI를 `host.docker.internal:8080`로 교정한다.
 - **API 서버는 반드시 8080 포트**로 실행해야 함 (Keycloak SPI가 고정 포트 참조)
 - 테스트에 사용할 Keycloak 사용자 계정이 있어야 함
 
@@ -42,7 +47,7 @@ description: |
 #### 1-2. 테스트 계정 정보
 
 - **이메일(username)**: 예) `admin@invigoworks.co.kr`
-- **비밀번호**: `.env.jenkins`의 `KEYCLOAK_PASSWORD` 값 (하드코딩 금지)
+- **비밀번호**: 예) `dlsqlrhdnjrtm1!`
 
 #### 1-3. 테스트할 API 범위
 
@@ -51,8 +56,15 @@ description: |
 ### 2단계: 인프라 및 서버 상태 확인
 
 ```bash
+# Docker 엔진 확인 (OrbStack 엔진이 꺼져 있으면 시작)
+docker ps >/dev/null 2>&1 || { orbctl start; for i in {1..30}; do docker ps >/dev/null 2>&1 && break; sleep 2; done; }
+
 # Docker 인프라 확인
 docker ps --format "table {{.Names}}\t{{.Ports}}" | grep -E "keycloak|postgres"
+
+# 인프라 미기동 시 local override 포함 기동 (전제 조건 참조)
+# cd docker && docker compose -f docker-compose.yml -f docker-compose.local.yml -p bitda up -d
+# 서브넷 확인: docker network inspect bitda-infra --format '{{range .IPAM.Config}}{{.Subnet}}{{end}}'  → 172.20.0.0/16 이어야 함
 
 # API 서버 실행 여부 확인 (8080 포트)
 if curl -s "http://localhost:8081/actuator/health" | grep -q '"status"'; then
@@ -72,13 +84,15 @@ fi
 # API 서버 시작 스크립트
 cat > /tmp/start_api.sh << 'EOF'
 #!/bin/bash
-cd /Users/thlee/invigoworks/git/bitda-back
+cd "$(git -C "$(pwd)" rev-parse --show-toplevel 2>/dev/null || echo /Users/gimjinhyeog/Desktop/coding/bitda-back)"
 export JWT_ALLOWED_AUDIENCES=bitda-api-server,bitda-admin-app,bitda-liquor-app,bitda-tax-app,bitda-manufact-app
 export KEYCLOAK_API_SERVER_CLIENT_ID=bitda-api-server
 export KEYCLOAK_API_SERVER_CLIENT_SECRET=bitda-api-server-secret-12345
-# POSTGRES_PASSWORD는 .env.jenkins에서 로드 (하드코딩 금지)
-# set -a; . /Users/gimjinhyeog/Desktop/coding/bitda-back/.env.jenkins; set +a
+# POSTGRES_USER/PASSWORD: 로컬 DB의 bitda_api 계정 자격증명.
+# 비번이 안 맞으면("password 인증 실패") superuser invigoworks로 재설정:
+#   docker exec bitda-postgres psql -U invigoworks -d bitda -c "ALTER USER bitda_api WITH PASSWORD 'bitda_api_dlsqlrhdnjrtm1!';"
 export POSTGRES_USER=bitda_api
+export POSTGRES_PASSWORD='bitda_api_dlsqlrhdnjrtm1!'
 export INTERNAL_API_KEY=local-internal-api-key-12345
 export GARAGE_ACCESS_KEY=test-access-key
 export GARAGE_SECRET_KEY=test-secret-key
@@ -367,6 +381,21 @@ Content-Type: application/json
 ### 로그인 실패: service_error
 
 API 서버(8080 포트)가 실행 중이지 않음. Keycloak SPI가 API 서버를 호출하므로 먼저 실행 필요.
+
+### 로그인 [3/4] 단계에서 timeout (curl exit 28)
+
+credential submit 단계에서 멈춤 = Keycloak SPI가 API 서버를 잘못된 주소로 호출. plain `docker compose up -d`로 dev override가 병합되어 `BITDA_API_BASE_URL`이 운영서버(`https://api-bitda.invigoworks.co.kr`)로 설정된 것이 원인.
+**해결**: `docker-compose.local.yml` 포함해 인프라 재기동 (전제 조건 참조). 확인: `docker exec bitda-keycloak printenv | grep BITDA_API_BASE_URL` → `http://host.docker.internal:8080` 이어야 함.
+
+### Keycloak 부팅 실패: `pg_hba.conf` 인증 거부 / `UnknownHostException: postgres`
+
+bitda-infra 네트워크 subnet이 172.16/12 대역 밖(예: OrbStack 192.168.x)이라 `pg_hba.conf`가 infra_keycloak/infra_debezium 접속을 거부. 또는 컨테이너를 compose 없이 `docker start`해 네트워크 alias가 유실됨.
+**해결**: `docker-compose.local.yml` 포함해 stack 재기동(subnet 172.20 고정). pg_hba.conf를 직접 수정하지 말 것(증상 땜질).
+
+### DB 인증 실패: `사용자 "bitda_api"의 password 인증을 실패했습니다`
+
+로컬 DB의 bitda_api 계정 비번이 start_api.sh의 `POSTGRES_PASSWORD`와 불일치.
+**해결**: superuser로 재설정 — `docker exec bitda-postgres psql -U invigoworks -d bitda -c "ALTER USER bitda_api WITH PASSWORD 'bitda_api_dlsqlrhdnjrtm1!';"` (postgres 볼륨에 영속).
 
 ### 8080 포트 사용 중
 
