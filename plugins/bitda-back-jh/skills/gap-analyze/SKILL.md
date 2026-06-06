@@ -38,14 +38,75 @@ FE 코드 → 기획서(누락1) → issue-create(누락2) → issue-plan(누락
 
 ## 🎯 FE 관점 체크리스트 (Agent C/D 필수 점검 항목)
 
-> "FE 화면이 굴러가지 않는다"는 사례를 카테고리별로 망라한 A~H 체크리스트는
-> **`references/fe-perspective-checklist.md`로 분리**했다 (본문 중복 제거).
-> Agent C/D는 디스패치 프롬프트에서 그 파일을 Read하라는 지시를 포함한다 (Step 1 참조).
->
-> 요약 — A. Response 필드 누락 / B. 마스터 드롭다운 조회 / C. 목록 부가기능
-> / D. 액션·상태전이 / E. 에러 응답 / F. 데이터 정합성 / G. 첨부·메모·이력 / H. Export·Import.
-> CRUD 라운드트립(C/R/U/D·구조불일치)은 `references/crud-roundtrip-matrix.md`,
-> production/BOM 특화 규칙은 `references/production-pr-lessons.md`.
+> "FE 화면이 굴러가지 않는다"는 사례를 카테고리별로 망라.
+> Agent C는 BE 분석 시 아래 항목 전부를 도메인별로 점검하고,
+> Agent D는 시나리오 시뮬레이션 시 누락된 항목을 갭으로 보고한다.
+
+### A. Response 필드 누락 (조회/표시)
+
+- [ ] **A1. isActive 플래그**: 마스터 엔티티 Response에 `isActive` 포함 (FE에서 비활성 항목 회색 처리 필요)
+- [ ] **A2. colorId**: 색상 구분 가능한 엔티티(factory, equipment, process)에 `colorId` 포함
+- [ ] **A3. sortOrder**: DnD 정렬 지원 엔티티에 `sortOrder` 포함
+- [ ] **A4. description**: hover tooltip / 상세 설명 필드
+- [ ] **A5. FK 이름 함께 반환**: factoryId 옆에 factoryName, processId 옆에 processName 등 (목록/상세에서 FE 추가 fetch 없이 표시 가능해야)
+- [ ] **A6. 하위 집계 (count)**: 마스터-디테일 관계(Factory→Equipment, Process→Task)에서 `equipmentCount`, `taskCount` 등 응답
+- [ ] **A7. 감사 필드**: 상세 조회 Response에 `createdAt`, `updatedAt`, `createdBy`, `updatedBy` 포함
+- [ ] **A8. 소프트 삭제 정보**: `deletedAt`, `deletedBy` (휴지통 / 복원 UI 사용 시)
+- [ ] **A9. version**: 낙관적 락 충돌 알림 UI 필요 시 `version` 응답
+- [ ] **A10. status 요약**: 목록에서 상태 분포(완료/미완료 count) 미리보기 필요 시
+
+### B. 마스터 데이터 조회 (드롭다운 / 자동완성)
+
+- [ ] **B1. 단순 GET 목록 API**: 폼 드롭다운에 쓰일 모든 참조 엔티티의 GET /api/v1/xxx 존재
+- [ ] **B2. 활성만 필터**: `?isActive=true` 또는 `?includeInactive=false` 파라미터 지원 (등록 폼에서 비활성 항목 숨김)
+- [ ] **B3. keyword 검색**: 자동완성용 `?keyword=` 파라미터 지원
+- [ ] **B4. 상위 ID 필터**: 종속 드롭다운(공장 선택 → 설비 필터) 위한 `?factoryId=` 등 파라미터
+- [ ] **B5. 옵션 마스터 API**: enum 대체 옵션(EquipmentType, VesselMaterial, Unit) 조회 API 또는 정적 enum 노출 방식 확정
+- [ ] **B6. 색상 팔레트 API**: colorId 후보값 BE 노출 또는 FE 하드코딩 정책 명시
+
+### C. 목록 조회 부가 기능
+
+- [ ] **C1. 페이지네이션**: 100건 이상 가능한 목록은 page/size 또는 limit/offset 지원
+- [ ] **C2. 정렬**: FE 컬럼 헤더 정렬 → BE `sortBy`, `sortOrder` 파라미터 모두 지원
+- [ ] **C3. 날짜 범위 필터**: `from`, `to` 파라미터 (생산계획, 입출고 등 시계열 데이터)
+- [ ] **C4. 다중 상태 필터**: status 다중 선택 `?status=A&status=B` 지원
+- [ ] **C5. 완료 상태 필터**: `completionStatus` (ALL/COMPLETED/INCOMPLETE) 등 비즈니스 상태 필터
+- [ ] **C6. 응답 메타**: `{ data, totalCount, page, size }` 페이지네이션 메타데이터 구조
+
+### D. 액션 / 상태 전이
+
+- [ ] **D1. 활성/비활성 토글**: `PATCH /xxx/{id}/active` 같은 토글 API
+- [ ] **D2. DnD 순서 변경**: `PATCH /xxx/reorder` (Factory/Equipment 외 도메인도 점검)
+- [ ] **D3. 취소/복원**: 소프트 삭제 후 복원 액션 API
+- [ ] **D4. 벌크 삭제**: 다중 선택 일괄 삭제 API (`DELETE /xxx?ids=...` 또는 body)
+- [ ] **D5. 벌크 상태 변경**: 다중 선택 일괄 활성/비활성/취소
+- [ ] **D6. 삭제 가능 여부 사전 체크**: 삭제 전 사용중 여부 조회 API 또는 삭제 실패 응답에 사용처 정보 포함
+
+### E. 에러 응답
+
+- [ ] **E1. ErrorCode 표준**: ApiResponse.error에 enum.name 일관성
+- [ ] **E2. 사람 읽을 메시지**: ApiResponse.message에 사용자 노출 가능한 한국어 메시지
+- [ ] **E3. 필드 검증 에러 구조**: `@Valid` 실패 시 필드별 에러 배열 반환
+- [ ] **E4. 참조 무결성 에러**: 삭제 시 "등록된 X가 N건 있어 삭제 불가" 같은 구체 메시지
+
+### F. 데이터 정합성
+
+- [ ] **F1. 시간 형식**: 시각은 `Instant` (ISO-8601 Z), 날짜는 `LocalDate` (YYYY-MM-DD), 시간은 `LocalTime` (HH:mm)
+- [ ] **F2. 소수 정밀도**: 수량/금액은 BigDecimal, FE에서 표시 자릿수 정책 일치
+- [ ] **F3. 단위 일관성**: Quantity의 unit 필드 형식 (kg/L/EA 등) FE 표시 매핑 가능
+- [ ] **F4. 소프트 삭제 필터**: 목록 조회 시 기본 `deletedAt IS NULL` 자동 필터링
+- [ ] **F5. 테넌트 격리**: organizationId 자동 주입 + 다른 조직 데이터 노출 차단 확인
+
+### G. 첨부 / 메모 / 이력
+
+- [ ] **G1. 메모 필드**: 등록/수정 시 memo Request/Response 양방향
+- [ ] **G2. 변경 이력 조회**: 수정 히스토리 조회 API 필요 도메인 식별
+- [ ] **G3. 첨부파일**: 업로드/다운로드/삭제 API + Response에 attachment list
+
+### H. Export / Import
+
+- [ ] **H1. Excel Export 응답 필드**: FE 표시 컬럼과 Export 컬럼 일치 (displayUnit/conversionRate 등 누락 여부)
+- [ ] **H2. Import 검증 응답**: 행별 에러 위치/메시지 반환 구조
 
 ---
 
@@ -91,27 +152,9 @@ find /Users/gimjinhyeog/Desktop/coding/plan-master/docs/specs -name "*.md" \
 
 ---
 
-### Step 1 (Stage 1 — 병렬 발굴 그물): A/B/C 에이전트 병렬 디스패치
-
-> **파이프라인 구조 (2단 직렬 게이트)**
-> ```
-> Stage 1 (병렬 그물)   Agent A∥B∥C∥D → 갭 "후보" 목록(raw, 미확정)
->         ↓ 배리어: 후보 전부 수집
-> Stage 2 (직렬 확정)   단일 verifier가 후보를 1건씩 순차 검증 → CONFIRMED / REFUTED
->         ↓
-> Stage 3 (사람 게이트) CONFIRMED만 사람에게 제시 → 이슈화
-> ```
-> Stage 1의 출력은 **전부 "후보"일 뿐 확정 갭이 아니다.** 병렬 에이전트는
-> 넓게 빠르게 긁는 그물 역할만 한다. 확정은 Stage 2 직렬 검증(Step 2.5)에서만 일어난다.
-> 병렬 에이전트가 `isReal=true`/`갭 확정`이라 적어도 그것은 후보 표시일 뿐이다.
+### Step 1: A/B/C 에이전트 병렬 디스패치
 
 다음 3개 에이전트를 **동시에** 실행한다.
-
-> ⚠️ **[필수] Agent C/D는 디스패치 프롬프트에 아래 references를 Read하라는 지시를 반드시 포함한다.**
-> 이 파일들은 머지된 PR에서 역추출한 탐지 규칙·CRUD 매트릭스다. Read 지시 없으면 병렬 에이전트는 읽지 않는다.
-> - 모든 도메인: `.claude/skills/gap-analyze/references/crud-roundtrip-matrix.md` (C/R/U/D 4종 + S1~S8 구조불일치)
-> - 모든 도메인: `.claude/skills/gap-analyze/references/fe-perspective-checklist.md` (A~H 화면 동작 체크리스트)
-> - production/BOM/생산계획/공정현황 도메인이면 추가: `.claude/skills/gap-analyze/references/production-pr-lessons.md` (J-RI/DB/API/FIELD/CUT 규칙 + grep + 오탐완화)
 
 #### Agent A — FE 코드 분석 (`code-explorer`)
 
@@ -237,60 +280,9 @@ Agent A~C 결과를 입력으로 `invigo-agents:architect-reviewer`를 실행한
 
 ---
 
-### Step 2.5 (Stage 2 — 직렬 확정 게이트): 단일 verifier 순차 검증 ⚖️ CRITICAL
+### Step 3: 갭 통합 분류
 
-> **이 단계가 오탐 차단의 핵심이다.** 병렬 그물(Stage 1)이 긁은 후보를
-> **하나의 직렬 컨텍스트**에서 한 건씩 검증한다. 병렬 adversarial이
-> evidenceAgainst를 적고도 `isReal=true`로 올리던 오판(생산관리 감사 #4)을
-> 구조적으로 차단한다 — verifier는 한 관문이라도 막히면 REFUTED로 떨어뜨리지,
-> 승격하지 못한다.
-
-Stage 1의 갭 후보 전부를 입력으로 **단일 에이전트**(`code-explorer`, 직렬)를 디스패치한다.
-**병렬 금지** — 한 컨텍스트에서 후보를 순번대로 처리해야 누적 판정 일관성이 유지된다.
-
-verifier는 각 후보에 대해 **3관문을 순서대로** 통과시킨다. 하나라도 막히면 즉시 REFUTED + 사유 기록, 다음 후보로.
-
-#### 관문 1 — 소스 진위 (Source Authenticity)
-후보의 FE 근거가 **plan-master 라우터 경로**(목업)인가, **실제 HTTP 경로**인가?
-- plan-master `apps/liquor`의 `page.tsx`/`useRepository('x')` 경로는 **FE 라우터 경로**이지 REST API가 아니다. `SimpleLocalStorageRepo` 기반 localStorage 목업이다.
-- 실제 FE HTTP 경로는 `plan-master/data/bitda-front/packages/services/.../endpoints.ts`에 있다.
-- **검증**: 후보의 경로를 endpoints.ts에서 직접 grep. endpoints.ts에 없고 apps/liquor 라우터에만 있으면 → **REFUTED (목업 라우터 경로, REST API 아님)**.
-```bash
-grep -rn "<후보 경로>" /Users/gimjinhyeog/Desktop/coding/plan-master/data/bitda-front/packages/services --include="*.ts"
-```
-> "경로 불일치/API경로불일치" 유형 후보는 이 관문에서 대량 REFUTED된다 (2026-06-03 P4/B1/B2/B3/M3 전례).
-
-#### 관문 2 — 현 HEAD 실측 (Current State Truth)
-후보가 가리킨 BE 파일을 **현재 HEAD에서 직접 Read**한다. PR 제목·커밋 메시지 신뢰 금지.
-- 필드 누락 후보 → 해당 `*Response.kt`/`*Result.kt` + JpaAdapter SELECT + Flyway 컬럼 **셋을 직접 Read**. 하나라도 있으면 갭 아님 → REFUTED.
-- API 누락 후보 → 해당 `*Controller.kt` 직접 Read (`@GetMapping`/`@PostMapping` 등 grep).
-- production 도메인 후보 → `production-pr-lessons.md`의 해당 규칙 grep + **오탐완화 예외 해당 여부** 직접 확인.
-> 인접 PR 함정: 최근 PR이 인접 필드만 채우고 정확히 그 갭은 비켜간 경우가 흔하다(#1986: BomTemplateItemRef 추가하며 materialName 누락). **현 HEAD 파일을 열어 그 필드 1개를 눈으로 확인**하기 전엔 확정/기각 금지.
-
-#### 관문 3 — 영향 실재 (Impact Reality)
-이 갭이 FE 시나리오에서 **실제로 막히는가**? FE가 로컬에서 `.find()`/`.map()`으로 가공 가능하면, 또는 FE가 그 경로를 실제 호출하지 않으면 → REFUTED (오탐).
-
-#### verifier 출력 형식 (반드시 이 표로)
-```
-## Stage 2 직렬 검증 결과
-
-| # | 후보 | 관문1 소스 | 관문2 HEAD | 관문3 영향 | 판정 | 사유/근거(file:line) |
-|---|------|-----------|-----------|-----------|------|---------------------|
-| 1 | FactoryResult colorId 누락 | ✅ endpoints.ts 존재 | ✅ FactoryResult.kt:23 colorId 없음 | ✅ 드롭다운 색상 표시 불가 | **CONFIRMED** | FactoryResult.kt:23 |
-| 2 | /bom/{id} 경로 불일치 | ❌ apps/liquor 라우터 경로 | — | — | **REFUTED** | endpoints.ts에 /bom/{id} 없음, 목업 라우터 |
-| 3 | materialName 누락 | ✅ | ✅ BomTemplateItemRef.kt:15 materialId만 | ✅ | **CONFIRMED** | #1986이 인접만 채움 |
-```
-> REFUTED 건은 표에 남기되 Stage 3 사람 게이트에는 **CONFIRMED만** 올린다.
-> verifier가 3관문 중 하나라도 `—`/`❌`면 CONFIRMED 불가. 이 규칙은 강제다.
-
----
-
-### Step 3 (Stage 3 — 사람 게이트): 갭 통합 분류
-
-> Stage 2에서 **CONFIRMED 판정된 후보만** 여기로 올라온다. REFUTED는 제외.
-> 사람은 CONFIRMED 표만 검토하면 된다 (REFUTED 전수 검토 불필요).
-
-Stage 2 verifier의 CONFIRMED 갭을 분류하여 사용자에게 제시:
+A~D 결과를 수집하여 갭을 분류하고 사용자에게 제시:
 
 > ⚠️ **오탐 방지 규칙 (CRITICAL)**
 >
@@ -308,7 +300,6 @@ Stage 2 verifier의 CONFIRMED 갭을 분류하여 사용자에게 제시:
 | **필드 누락 (폼 드롭다운)** | 마스터 데이터 목록 조회 Response에 FE 표시용 필드(name/colorId/isActive 등) 없음 | High |
 | **form-data API 누락** | 폼 드롭다운 3개+ 독립 마스터 데이터 조회 시 통합 `GET /xxx/form-data` API 없음 → waterfall 발생 | Medium |
 | **비즈니스 규칙 미구현** | 기획서 invariant가 Domain에 없음 | Medium |
-| **Swagger 한글 설명 누락** | Request/Response DTO `@Schema(description=...)`가 없거나 빈 값이거나 한글 아님 → Swagger·노션 문서 설명 비어 무용 (전 도메인 공통, 상세 production-pr-lessons.md FP2b) | Medium |
 | **정책 미결** | Open Question으로 남은 정책 | Medium |
 | **기획서 누락** | FE에 구현됐으나 기획서에 미명시 | Low |
 
@@ -327,8 +318,6 @@ Stage 2 verifier의 CONFIRMED 갭을 분류하여 사용자에게 제시:
 ---
 
 ### Step 4: 이슈 생성 확인 후 실행
-
-> CONFIRMED 갭만 대상. Stage 2에서 REFUTED된 후보는 이슈화 금지.
 
 갭 목록 제시 후 사용자에게 확인:
 ```
@@ -370,7 +359,6 @@ Stage 2 verifier의 CONFIRMED 갭을 분류하여 사용자에게 제시:
 - 필드 누락 (생성/수정) + Flyway → `feature`, `api-change`
 - 필드 누락 (폼 드롭다운) → `feature`, `api-change`
 - 비즈니스 규칙 → `feature`
-- Swagger 한글 설명 누락 → `documentation`, `priority:low`
 - 정책 미결 → `feature`, `priority:medium`
 - 크기 자동 추정: small(1-2h) / medium(3-8h) / large(1-3d)
 
@@ -378,5 +366,58 @@ Stage 2 verifier의 CONFIRMED 갭을 분류하여 사용자에게 제시:
 
 ## 유용한 탐색 명령어
 
-> 전체 탐색 명령어(FE 호출패턴·드롭다운·기획서·Controller·Flyway·Domain·Result·form-data)는
-> **`references/search-commands.md`** 참조. 각 Agent는 필요 시 그 파일을 Read한다.
+FE API 호출 패턴 찾기:
+```bash
+grep -r "useRepository\|fetch(\|axios\.\|\.get(\|\.post(\|\.patch(\|\.delete(" \
+  /Users/gimjinhyeog/Desktop/coding/plan-master/apps/liquor/src/{domain} \
+  --include="*.ts" --include="*.tsx" -n
+```
+
+FE 드롭다운 데이터 조회 패턴 찾기 (마스터 데이터):
+```bash
+grep -r "useRepository\|useFetch\|useQuery" \
+  /Users/gimjinhyeog/Desktop/coding/plan-master/apps/liquor/src/{domain} \
+  --include="*.ts" --include="*.tsx" -n \
+  | grep -v "POST\|PATCH\|PUT\|DELETE"
+```
+
+기획서 파일 목록:
+```bash
+find /Users/gimjinhyeog/Desktop/coding/plan-master/docs/specs/liquor \
+  -name "*.md" | sort
+```
+
+BE Controller 목록:
+```bash
+find /Users/gimjinhyeog/Desktop/coding/bitda-back/modules/application/api/src \
+  -name "*Controller.kt" | sort
+```
+
+Flyway 마이그레이션 목록:
+```bash
+find /Users/gimjinhyeog/Desktop/coding/bitda-back/modules/infrastructure/src \
+  -name "V*.sql" | sort | tail -20
+```
+
+Domain 모델 필드 확인:
+```bash
+grep -r "val \|var " \
+  /Users/gimjinhyeog/Desktop/coding/bitda-back/modules/domain/src \
+  --include="*.kt" -n | grep -v "//\|test\|Test"
+```
+
+마스터 데이터 조회 Result 클래스 필드 확인:
+```bash
+grep -r "data class\|val " \
+  /Users/gimjinhyeog/Desktop/coding/bitda-back/modules/application/core/src \
+  --include="*Result.kt" -n | grep -v "test\|Test"
+```
+
+form-data 통합 API 존재 여부 확인 (없으면 form-data API 누락 갭):
+```bash
+# 도메인별 form-data 엔드포인트 확인
+grep -r "form-data\|formData\|FormData" \
+  /Users/gimjinhyeog/Desktop/coding/bitda-back/modules/application/api/src \
+  --include="*.kt" -n | grep -i "GetMapping\|RequestMapping"
+# 결과 없으면 → 해당 도메인 form-data API 갭 판정
+```

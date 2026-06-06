@@ -127,6 +127,34 @@ grep -rn "leftJoin\|innerJoin" $BACK/modules/infrastructure/src/main/kotlin \
 
 ## J-FIELD. 필드 전파 / DTO 일관성
 
+### FIELD-REQ. Create/Update Request DTO 필드 부재 — 오탐 완화 + isActive 함정 (High↔N/A) — 2026-06 공정설정
+
+FE 생성/수정 폼(Sheet)이 submit하는 필드가 BE `*Request.kt`에 없을 때. **이슈화 전 N/A 3종 확인**:
+
+**① 자동채번** — `code`/`lotNumber`/`serialNumber`/`productionCode`
+- 확인: `code-generation-policy.md` 대상 + `XxxCodeNumberFactory` 구현체 존재
+- 채번 정책이면 FE 전송해도 BE 수신 경로 없는 게 설계 → **N/A**
+
+**② 생성 기본값 + 토글 전용 엔드포인트 — 🚨 조건부**
+- 해당: `isActive`, `isEnabled`
+- 확인: 생성 Service `isActive = true` 고정 + `ChangeActiveStatus`/`active-status` 엔드포인트 존재
+- **그러나 N/A 단정 금지** — FE 생성/수정 Sheet의 onSubmit이 isActive를 submit하면 **진짜 ❌ 갭**:
+```bash
+# FE Sheet 폼 schema에 isActive 있나
+grep -n "isActive" $FE/apps/liquor/src/{domain}/components/*Sheet.tsx
+# page.tsx onSubmit이 createX/updateX에 {...data} 넘기나 (data에 isActive 포함)
+grep -n "createX\|updateX\|handleSubmit\|{...data}" $FE/apps/liquor/src/{domain}/page.tsx
+# BE Create/Update Request에 isActive 있나
+grep -c "isActive" <(awk '/data class Create.*Request\(/,/^\)/' $BACK/.../*Request.kt)
+```
+- 폼이 보내고 BE 미수용 → 비활성 생성 불가 / 수정폼 활성토글 저장 불가 = **High**. 행목록 빠른토글(`updateX(id,{isActive:!x})`)은 별개 — 혼동 금지.
+
+**③ 전용 엔드포인트 분리** — `sortOrder`/`displayOrder`
+- 확인: KDoc "Reorder API 사용" 또는 `@PatchMapping(".../reorder")` 존재 → **N/A**
+
+**CONFIRMED 조건**: 3종 해당 없음(②는 폼 submit 포함 시 갭) + BE `*Request.kt` 직접 Read로 필드 부재 눈으로 확인.
+또한 **Update Request에 `name` 부재**도 흔한 갭(수정폼 이름 변경 불가) — Factory/Equipment/Vessel Update Request에서 발생.
+
 ### FP1. Request→Command→Service→Response 전파 끊김 (High) — #1954
 신규 필드(unitTagId 등)가 Request엔 있으나 Command/Service.build()/Response 어딘가 누락(write 미연결).
 수동 추적: 신규 필드 1개를 잡아 4계층 grep.
